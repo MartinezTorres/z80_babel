@@ -2,7 +2,7 @@
 
 This is a proof of concept for a multi-language pipeline for the Z80 CPU, and its corresponding test and benchmark tool coded for MSX. This is the result of using a large amount of monkeys randomnly duct-taping different compilers until a working prototype was created.
 
-Most surprisingly, it IS possible to use C++, D, Fortran, Rust or Zig to generate binaries for the Z80, and even more surprisingly, these have competitive performance (except for Fortran, but I maybe we can live with that). Support for their respective standard libraries is somewhat limited (a.k.a inexistent).
+Most surprisingly, it IS possible to use C++, D, Fortran, Rust or Zig to generate binaries for the Z80, and even more surprisingly, these have competitive performance (except for Fortran, but maybe we can live with that). Support for their respective standard libraries is somewhat limited (a.k.a inexistent).
 
 ## Documentation
 To compile C we use SDCC. To compile C++, Rust, D, Zig or Fortran, we use the llvm-cbe backend to generate a C file, and we compile this file using SDCC. The key that makes this possible is using the AVR target for the llmv frontends. I could not get Fortran to accept the AVR target, and thus it incurrs on a large performance penalty.
