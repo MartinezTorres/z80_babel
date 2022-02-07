@@ -1,6 +1,8 @@
 #include <common.h>
 
-static const uint16_t offset_y[256] = {
+static
+__at ((16 + 2 * 8)*1024U) 
+const uint16_t offset_y_ct[256] = {
 0x0000, 0x0001, 0x0002, 0x0003, 0x0004, 0x0005, 0x0006, 0x0007, 0x0008, 0x0009, 0x000A, 0x000B, 0x000C, 0x000D, 0x000E, 0x000F, 
 0x0010, 0x0011, 0x0012, 0x0013, 0x0014, 0x0015, 0x0016, 0x0017, 0x0018, 0x0019, 0x001A, 0x001B, 0x001C, 0x001D, 0x001E, 0x001F, 
 0x0020, 0x0021, 0x0022, 0x0023, 0x0024, 0x0025, 0x0026, 0x0027, 0x0028, 0x0029, 0x002A, 0x002B, 0x002C, 0x002D, 0x002E, 0x002F, 
@@ -19,7 +21,9 @@ static const uint16_t offset_y[256] = {
 0x1830, 0x1831, 0x1832, 0x1833, 0x1834, 0x1835, 0x1836, 0x1837, 0x1838, 0x1839, 0x183A, 0x183B, 0x183C, 0x183D, 0x183E, 0x183F, 
 };
 
-static const uint16_t offset_x[256] = {
+static 
+__at ((16 + 2 * 8)*1024U +  512U) 
+const uint16_t offset_x_ct[256] = {
 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0040, 0x0040, 0x0040, 0x0040, 0x0040, 0x0040, 0x0040, 0x0040, 
 0x0080, 0x0080, 0x0080, 0x0080, 0x0080, 0x0080, 0x0080, 0x0080, 0x00C0, 0x00C0, 0x00C0, 0x00C0, 0x00C0, 0x00C0, 0x00C0, 0x00C0, 
 0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0140, 0x0140, 0x0140, 0x0140, 0x0140, 0x0140, 0x0140, 0x0140, 
@@ -38,7 +42,9 @@ static const uint16_t offset_x[256] = {
 0x0780, 0x0780, 0x0780, 0x0780, 0x0780, 0x0780, 0x0780, 0x0780, 0x07C0, 0x07C0, 0x07C0, 0x07C0, 0x07C0, 0x07C0, 0x07C0, 0x07C0, 
 };
 
-static const uint8_t shift8[256] = {
+static 
+__at ((16 + 2 * 8)*1024U +  1024U) 
+const uint8_t shift8_ct[256] = {
 0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01, 0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01, 
 0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01, 0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01, 
 0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01, 0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01, 
@@ -57,22 +63,20 @@ static const uint8_t shift8[256] = {
 0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01, 0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01, 
 };
 
+#define offset_y ((const uint16_t *)((16 + 2 * 8)*1024U))
+#define offset_x ((const uint16_t *)((16 + 2 * 8)*1024U + 512U))
+#define shift8   ((const uint8_t *)((16 + 2 * 8)*1024U + 1024U))
 
 
 T_SA SA;
-
-static uint16_t history_location[256];
-static uint8_t history_value[256]; 
-static uint8_t history_shift[256]; 
-static uint8_t history_pt; 
-
-static uint8_t ROI_x0, ROI_x1, ROI_y0, ROI_y1;
 
 TTextProperties textProperties;
 
 #ifdef MSX
     // Stack is at 0xfc4a ~ 63K
-    static __at ((48+6)*1024U) uint8_t screen_copy[3*32*64];
+    static __at ((48+6)*1024U) uint8_t screen_copy_ram[3*32*64];
+    #define screen_copy ((uint8_t *)((48+6)*1024U))
+
 #else
     static uint8_t screen_copy[3*32*64];
 
@@ -80,6 +84,10 @@ TTextProperties textProperties;
 
 
 void initCanvas() {
+    
+    UNUSED(offset_x_ct);
+    UNUSED(offset_y_ct);
+    UNUSED(shift8_ct);
     
     // Activates mode 2 and clears the screen (in black)
     TMS99X8_activateMode2(); 
@@ -97,20 +105,20 @@ void initCanvas() {
     {
         uint8_t i=0;
         do {
-            history_value[((i<<5)&0xFF) + (i>>3)] = i;
+            screen_copy[((i<<5)&0xFF) + (i>>3)] = i;
         } while (++i != 0);
     }
     
-    TMS99X8_memcpy(MODE2_ADDRESS_PN0 + 0x0000, (const uint8_t *)history_value, 256);    
-    TMS99X8_memcpy(MODE2_ADDRESS_PN0 + 0x0100, (const uint8_t *)history_value, 256);    
-    TMS99X8_memcpy(MODE2_ADDRESS_PN0 + 0x0200, (const uint8_t *)history_value, 256);    
+    TMS99X8_memcpy(MODE2_ADDRESS_PN0 + 0x0000, (const uint8_t *)screen_copy, 256);    
+    TMS99X8_memcpy(MODE2_ADDRESS_PN0 + 0x0100, (const uint8_t *)screen_copy, 256);    
+    TMS99X8_memcpy(MODE2_ADDRESS_PN0 + 0x0200, (const uint8_t *)screen_copy, 256);    
 
     TMS99X8_memset(MODE2_ADDRESS_PG, 0, sizeof(T_PG));
-    memset(screen_copy,0,sizeof(screen_copy));
+    memset(screen_copy,0,3*32*64);
 
     TMS99X8_memset(MODE2_ADDRESS_CT, FWhite + BTransparent, sizeof(T_CT));
     
-    history_pt = 0;
+    //history_pt = 0;
 
     memset(&textProperties,0,sizeof(textProperties));
 
@@ -123,70 +131,20 @@ void initCanvas() {
     textProperties.color = FWhite + BTransparent;
     textProperties.sz = 1;
     textProperties.space_between_lines = 7;
-    textProperties.faster = 1;
     
-    setROI(0,0,255,191);
+//    setROI(0,0,255,191);
 
     TMS99X8.blankScreen = 1;
     TMS99X8_syncRegister(1);
 }
 
+void repaintScreen() {
 
-void undoPoint() {
- 
-    uint16_t pos = history_location[history_pt];
-    if (pos<(16*1024)) {
-        TMS99X8_setPtr(pos);
-        TMS99X8_write(MODE2_ADDRESS_PG + (screen_copy[pos] = history_value[history_pt]));
-    }
-    history_pt = (history_pt+255);
+    TMS99X8_memcpy(MODE2_ADDRESS_PG, (const uint8_t *)screen_copy, sizeof(T_PG));    
 }
 
-void setROI(uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1) { 
-    
-    ROI_x0 = (x0>x1?x1:x0);
-    ROI_y0 = (y0>y1?y1:y0);
-    ROI_x1 = (x0>x1?x0:x1);
-    ROI_y1 = (y0>y1?y0:y1);
-    if (ROI_y1>191) ROI_y1 = 191;
-}
+void setPoints_v8(uint8_t x, uint8_t y, uint8_t value) {
 
-void setPoint(int16_t x16, int16_t y16, uint8_t value, uint8_t color) {
-
-    history_pt = (history_pt+1);
-    history_location[history_pt] = 16*1024;
-    
-    if ((x16&0xFF00) || (y16&0xFF00)) return;
-    uint8_t x = x16;
-    if (x<ROI_x0) return;
-    if (x>ROI_x1) return;
-    uint8_t y = y16;
-    if (y<ROI_y0) return;
-    if (y>ROI_y1) return;
-    
-    uint16_t offset = offset_x[x] + offset_y[y];
-
-    uint8_t v = screen_copy[offset];
-    uint8_t shift = shift8[x];
-    history_location[history_pt] = offset;
-    history_value[history_pt] = v;
-    history_shift[history_pt] = shift;
-    TMS99X8_setPtr(MODE2_ADDRESS_PG + offset);
-    if (value) {
-        TMS99X8_write(screen_copy[offset] = (v |  shift));
-    } else {
-        TMS99X8_write(screen_copy[offset] = (v & ~shift));
-    }
-
-    TMS99X8_setPtr(MODE2_ADDRESS_CT + offset);
-    TMS99X8_write(color);
-}
-
-
-void setPoints_v8(int16_t x16, int16_t y16, uint8_t value) {
-
-    uint8_t x = x16;
-    uint8_t y = y16;
     uint16_t offset = offset_x[x] + offset_y[y];
     TMS99X8_setPtr(MODE2_ADDRESS_PG + offset);
     TMS99X8_write(screen_copy[offset] = value);
@@ -197,284 +155,248 @@ void setPoints_v8c(uint8_t x, uint8_t y, uint8_t value, uint8_t color) {
 
     uint16_t offset = offset_x[x] + offset_y[y];
     TMS99X8_setPtr(MODE2_ADDRESS_PG + offset);
-    TMS99X8_write(value);
+    TMS99X8_write(screen_copy[offset] = value);
     TMS99X8_setPtr(MODE2_ADDRESS_CT + offset);
-    TMS99X8_write(color);
+    TMS99X8_write(color);    
 }
 
-uint8_t getPoints_v8(int16_t x16, int16_t y16) {
 
-    uint8_t x = x16;
-    uint8_t y = y16;
+
+void readLine(uint8_t *data, uint8_t idx) {
+    
+    const uint8_t *psrc = &screen_copy[offset_y[idx]];
+
+    UNROLL(32, {
+	*data = *psrc;
+	data ++;
+	psrc += 0x40;
+    });
+}
+
+void writeLine(const uint8_t *data, uint8_t idx) {
+
+    {
+	const uint8_t *psrc = data;
+	uint8_t *pdst = &screen_copy[offset_y[idx]];
+
+	UNROLL(32, {
+	    *pdst = *psrc;
+	    pdst += 0x40;
+	    psrc ++;
+	});
+    }
+
+    uint16_t odst = MODE2_ADDRESS_PG + offset_y[idx];
+    const uint8_t *psrc = data;
+
+    UNROLL(32, {
+	TMS99X8_setPtr(odst);
+	TMS99X8_write(*psrc);
+	odst += 0x40;
+	psrc ++;
+    });
+}
+
+
+static inline uint16_t getOffset(uint8_t x, uint8_t y) {
+
     uint16_t offset = offset_x[x] + offset_y[y];
+    return offset;
+}
+
+
+void setPointColor(uint8_t x, uint8_t y, uint8_t color) {
+
+    uint16_t offset = getOffset(x,y);
+    TMS99X8_setPtr(MODE2_ADDRESS_CT + offset);
+    TMS99X8_write(color);    
+}
+
+uint8_t getPoints_v8(uint8_t x, uint8_t y) {
+
+    uint16_t offset = getOffset(x,y);
     return screen_copy[offset];
 }
 
 
-void setHistoricPoint(uint8_t hist, uint8_t value, uint8_t color) {
-
-    uint16_t offset = history_location[((uint8_t)(history_pt-hist))];
-    uint8_t shift = history_shift[((uint8_t)(history_pt-hist))];
-    uint8_t v = screen_copy[offset];
+void setPointFG(uint8_t x, uint8_t y) {
     
-    if (offset<(16*1024)) {
-
-        TMS99X8_setPtr(MODE2_ADDRESS_PG + offset);
-        if (value) {
-            TMS99X8_write(screen_copy[offset] = (v |  shift));
-        } else {
-            TMS99X8_write(screen_copy[offset] = (v & ~shift));
-        }
-
-        TMS99X8_setPtr(MODE2_ADDRESS_CT + offset);
-        TMS99X8_write(color);    
-    }
-}
-
-
-void restoreHistoricPoint(uint8_t hist) {
-
-    uint16_t pos = history_location[((uint8_t)(history_pt-hist))];
-    if (pos<(16*1024)) {
-        TMS99X8_setPtr(pos);
-        TMS99X8_write(MODE2_ADDRESS_PG + (screen_copy[pos] = history_value[((uint8_t)(history_pt-hist))]));
-    }
-}
-
-void setPointFG(uint16_t xy) __z88dk_fastcall {
-    
-    uint8_t x = xy>>8;
-    uint8_t y = xy&0xFF;
-
-//    printf("%d %d\n", x, y);
-    uint16_t offset = offset_x[x] + offset_y[y];
+    uint16_t offset = getOffset(x,y);
 
     TMS99X8_setPtr(MODE2_ADDRESS_PG + offset);
     TMS99X8_write(screen_copy[offset] |= shift8[x]);    
 }
 
-void setPointBG(uint16_t xy) __z88dk_fastcall {
+void setPointBG(uint8_t x, uint8_t y) {
     
-    uint8_t x = xy>>8;
-    uint8_t y = xy&0xFF;
-
-//    printf("%d %d\n", x, y);
-    uint16_t offset = offset_x[x] + offset_y[y];
+    uint16_t offset = getOffset(x,y);
 
     TMS99X8_setPtr(MODE2_ADDRESS_PG + offset);
     TMS99X8_write(screen_copy[offset] &= ~shift8[x]);    
 }
 
-void rectangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint8_t pattern, uint8_t color) {
+void setPointXG(uint8_t x, uint8_t y) {
     
-    if (x0>x1) {int16_t tmp = x0; x0=x1; x1=tmp;}
-    if (y0>y1) {int16_t tmp = y0; y0=y1; y1=tmp;}
-    
-    if (x0<ROI_x0) x0=ROI_x0;
-    if (x1>ROI_x1) x1=ROI_x1;
-    if (y0<ROI_y0) y0=ROI_y0;
-    if (y1>ROI_y1) y1=ROI_y1;
+    uint16_t offset = getOffset(x,y);
 
-	yield();
-
-//    printf("%d %d %d %d %d\n", x0, y0, x1, y1, pattern);
-    
-    
-    if (y0<64 && y1>=64) {
-        rectangle(x0,y0,x1,63,pattern,color);
-        y0=64;
-    }
-    if (y0<128 && y1>=128) {
-        rectangle(x0,y0,x1,127,pattern,color);
-        y0=128;
-    }
-
-    if ((x0&0x7)==0) {
-        while (x1>=x0+7) {
-			yield();
-
-            uint8_t sz = y1-y0+1;
-            uint16_t offset = offset_x[x0] + offset_y[y0];
-//            printf("XX %d %d\n", sz, offset);
-            TMS99X8_memset(MODE2_ADDRESS_PG + offset, pattern, sz);
-            TMS99X8_memset(MODE2_ADDRESS_CT + offset, color, sz);
-            { uint8_t *p = &screen_copy[offset]; while (sz--) *p++=pattern; }
-            x0 += 8;
-        }
-    }
-
-//    printf( "MID: %d %d %d %d %d\n", x0, y0, x1, y1, pattern);
-
-    if (x0==x1) {
-
-        uint8_t sz = y1-y0+1;
-        uint16_t offset = offset_x[x0] + offset_y[y0];
-        TMS99X8_memset(MODE2_ADDRESS_CT + offset, color, sz);
-        
-        if ((shift8[x0] & pattern)!=0) {
-            uint16_t p = (x0<<8) | y0;
-            while (sz--) {
-				yield();
-				setPointFG(p++);
-			}
-        } else {
-            uint16_t p = (x0<<8) | y0;
-            while (sz--) {
-				yield();
-				setPointBG(p++);
-			}
-        }
-        
-    } else if (x1>x0) {
-        rectangle(x0  ,y0,x0,y1,pattern,color);
-        rectangle(x0+1,y0,x1,y1,pattern,color);
-    }
+    TMS99X8_setPtr(MODE2_ADDRESS_PG + offset);
+    TMS99X8_write(screen_copy[offset] ^= shift8[x]);    
 }
 
+void rectangle(uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1, uint8_t border_pattern, uint8_t fill_pattern, uint8_t color) {
+    
+    if (x0>x1) {uint8_t tmp = x0; x0=x1; x1=tmp;}
+    if (y0>y1) {uint8_t tmp = y0; y0=y1; y1=tmp;}
 
-void rectangleColor(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint8_t color) {
-    
-    if (x0>x1) {int16_t tmp = x0; x0=x1; x1=tmp;}
-    if (y0>y1) {int16_t tmp = y0; y0=y1; y1=tmp;}
-    
-    if (x0<ROI_x0) x0=ROI_x0;
-    if (x1>ROI_x1) x1=ROI_x1;
-    if (y0<ROI_y0) y0=ROI_y0;
-    if (y1>ROI_y1) y1=ROI_y1;
+    if (border_pattern == 0xFF && fill_pattern == 0) {
 
-	yield();
+	line(x0,y0,x1-1,y0);
+	line(x1,y0,x1,y1-1);
+	line(x1,y1,x0+1,y1);
+	line(x0,y1,x0,y0+1);
 
-//    printf("%d %d %d %d %d\n", x0, y0, x1, y1, pattern);
-    
-    
-    if (y0<64 && y1>=64) {
-        rectangleColor(x0,y0,x1,63,color);
-        y0=64;
+	x0++;
+	y0++;
+	x1--;
+	y1--;
+	border_pattern = fill_pattern;
+	
+    } else if (border_pattern != fill_pattern) {
+	
+	rectangle(x0,y0,x1,y1,border_pattern, border_pattern, color);
+	x0++;
+	y0++;
+	x1--;
+	y1--;
+	border_pattern = fill_pattern;
     }
-    if (y0<128 && y1>=128) {
-        rectangleColor(x0,y0,x1,127,color);
-        y0=128;
-    }
-
-    if ((x0&0x7)==0) {
-        while (x1>=x0+7) {
-
-            uint8_t sz = y1-y0+1;
-            uint16_t offset = offset_x[x0] + offset_y[y0];
-//            printf("XX %d %d\n", sz, offset);
-            TMS99X8_memset(MODE2_ADDRESS_CT + offset, color, sz);
-            x0 += 8;
-        }
-    }
-
-//    printf( "MID: %d %d %d %d %d\n", x0, y0, x1, y1, pattern);
-
-    if (x0==x1) {
-
-        uint8_t sz = y1-y0+1;
-        uint16_t offset = offset_x[x0] + offset_y[y0];
-        TMS99X8_memset(MODE2_ADDRESS_CT + offset, color, sz);
-    } else if (x1>x0) {
-        rectangleColor(x0  ,y0,x0,y1,color);
-        rectangleColor(x0+1,y0,x1,y1,color);
-    }
-}
-
-
-void setHLine(uint8_t n, int16_t x16, int16_t y16, uint8_t value, uint8_t color) {
-    while (n--) {
-        setPoint(x16++,y16,value,color);
-    }    
-}
-    
-
-
-
-static void writeChar(char cr) {
     
     yield();
 
-    uint8_t old = ML_LOAD_SEGMENT_D(textProperties.font_segment);
+    if (y0<64 && y1>=64) {
+        rectangle(x0,y0,x1,63,border_pattern, fill_pattern, color);
+        y0=64;
+    }
+    if (y0<128 && y1>=128) {
+        rectangle(x0,y0,x1,127,border_pattern, fill_pattern, color);
+        y0=128;
+    }
 
+    if ((x0&0x7)==0) {
+        while (x1-7>=x0) {
+	    
+	    yield();
+
+            uint8_t sz = y1-y0+1;
+            uint16_t offset = offset_x[x0] + offset_y[y0];
+//            printf("XX %d %d\n", sz, offset);
+            TMS99X8_memset(MODE2_ADDRESS_PG + offset, fill_pattern, sz);
+            TMS99X8_memset(MODE2_ADDRESS_CT + offset, color, sz);
+            { uint8_t *p = &screen_copy[offset]; while (sz--) *p++=fill_pattern; }
+            x0 += 8;
+	    if (x0 < 8) return;
+        }
+    }
+
+//    printf( "MID: %d %d %d %d %d\n", x0, y0, x1, y1, pattern);
+
+    if (x0==x1) {
+
+        uint8_t sz = y1-y0+1;
+        uint16_t offset = offset_x[x0] + offset_y[y0];
+        TMS99X8_memset(MODE2_ADDRESS_CT + offset, color, sz);
+        
+        if ((shift8[x0] & fill_pattern)!=0) {
+            while (sz--) {
+		setPointFG(x0,y0++);
+	    }
+        } else {
+            while (sz--) {
+		setPointBG(x0,y0++);
+	    }
+        }
+        
+    } else if (x1>x0) {
+        rectangle(x0  ,y0,x0,y1,border_pattern, fill_pattern,color);
+        rectangle(x0+1,y0,x1,y1,border_pattern, fill_pattern,color);
+    }
+}
+
+static void writeChar(char cr) {
+
+    yield();
+    
     uint8_t c = cr-32;
     const uint16_t *begin = &textProperties.font_pts[textProperties.font_pos[c]];
     const uint16_t *end   = &textProperties.font_pts[textProperties.font_pos[c+1]];
     while (begin != end) {
-	    uint16_t xy0 = *begin++;
-	    uint16_t xy = 0; 
-	    for (uint8_t i=textProperties.sz; i; i--) { xy += xy0; }
-	    
-	    uint8_t x = textProperties.x + (xy>>8);
-	    uint8_t y = textProperties.y + (xy&0xFF);
-	    setPoint(x, y, textProperties.value, textProperties.color);
-	    if (textProperties.dotCallback != nullptr) (*textProperties.dotCallback)();
+	uint16_t xy0 = *begin++;
+	uint16_t xy = 0; 
+	for (uint8_t i=textProperties.sz; i; i--) { xy += xy0; }
+	setPointXG(textProperties.x + (xy>>8), textProperties.y + (xy & 0xFF));
+	if (textProperties.dotCallback != nullptr) (*textProperties.dotCallback)();
     }
     uint8_t len0 = textProperties.font_len[c];
     uint8_t len  = 0;
     for (uint8_t i=textProperties.sz; i; i--) { len += (int8_t)len0; }
     textProperties.x += len;
     if (textProperties.charCallback != nullptr) (*textProperties.charCallback)();
-
-    ML_RESTORE_D(old);
-}
-
-
-static void writeCharFaster(char cr) {
-    
-    yield();
-    
-    uint8_t old = ML_LOAD_SEGMENT_D(textProperties.font_segment);
-
-    uint8_t c = cr-32;
-    const uint16_t *begin = &textProperties.font_pts[textProperties.font_pos[c]];
-    const uint16_t *end   = &textProperties.font_pts[textProperties.font_pos[c+1]];
-    while (begin != end) {
-	    uint16_t xy0 = *begin++;
-	    uint16_t xy = 0; 
-	    for (uint8_t i=textProperties.sz; i; i--) { xy += xy0; }
-	    setPointFG(xy + ((textProperties.x&0xFF)<<8) + (textProperties.y&0xFF));
-    }
-    uint8_t len0 = textProperties.font_len[c];
-    uint8_t len  = 0;
-    for (uint8_t i=textProperties.sz; i; i--) { len += (int8_t)len0; }
-    textProperties.x += len;
-
-    ML_RESTORE_D(old);
 }
 
 void writeText(const char *str) {
     
+    uint8_t old = ML_LOAD_SEGMENT_D(textProperties.font_segment);
 
-	uint16_t orig_x = textProperties.x;
-	uint16_t orig_y = textProperties.y;
+    uint8_t orig_x = textProperties.x;
+    uint8_t orig_y = textProperties.y;
 
-	while (*str) {
-		if (*str == '\n') {
-			textProperties.x = orig_x;
-			orig_y = textProperties.y = orig_y + textProperties.space_between_lines;
-			str++;
-			continue;
-		}
-		if (textProperties.faster) {
-			writeCharFaster(*str++);
-		} else {
-			writeChar(*str++);
-		}
+    while (*str) {
+	if (*str == '\n') {
+	    textProperties.x = orig_x;
+	    orig_y = textProperties.y = orig_y + textProperties.space_between_lines;
+	    str++;
+	    continue;
 	}
+	writeChar(*str++);
+    }
+    
+    ML_RESTORE_D(old);
 }
 
-//void putNumber(int32_t number, uint8_t padding, uint8_t zero_fill, uint8_t exponent_bits, uint8_t n_fractional_digits) {
+
+uint8_t getTextWidth(const char *str) {
     
-//}
+    uint8_t old = ML_LOAD_SEGMENT_D(textProperties.font_segment);
+    
+    uint8_t textWidth = 0;
+    
+    while (*str) {
+	if (*str == '\n') {
+	    str++;
+	    continue;
+	}
 
-static void lineFastV(uint8_t x0, uint8_t y0, uint8_t y1) { do setPointFG((x0<<8)|y0); while (y0++!=y1); }
-static void lineFastH(uint8_t x0, uint8_t x1, uint8_t y0) { do setPointFG((x0<<8)|y0); while (x0++!=x1); }
+	uint8_t c = *str++ - 32;
+	uint8_t len0 = textProperties.font_len[c];
+	uint8_t len  = 0;
+	for (uint8_t i=textProperties.sz; i; i--) { len += (int8_t)len0; }
+	
+	textWidth += len;
+    }
+    
+    ML_RESTORE_D(old);
+    
+    return textWidth;
+}
 
-static void lineFastQ0(uint8_t x0, uint8_t y0, int8_t dx, int8_t dy) { 
+static void lineV(uint8_t x0, uint8_t y0, uint8_t y1) { do setPointXG(x0,y0); while (y0++!=y1); }
+static void lineH(uint8_t x0, uint8_t x1, uint8_t y0) { do setPointXG(x0,y0); while (x0++!=x1); }
+
+static void lineQ0(uint8_t x0, uint8_t y0, int8_t dx, int8_t dy) { 
 
 	int8_t d=2*dx-dy;
 	for (uint8_t y=y0, x=x0;;y++) {
-		setPointFG((x<<8)|y);
+		setPointXG(x,y);
 		if (d<=0)
 			d+=2*dx;
 		else {
@@ -485,12 +407,12 @@ static void lineFastQ0(uint8_t x0, uint8_t y0, int8_t dx, int8_t dy) {
 	}
 }
 
-static void lineFastQ1(uint8_t x0, uint8_t y0, int8_t dx, int8_t dy) { 
+static void lineQ1(uint8_t x0, uint8_t y0, int8_t dx, int8_t dy) { 
 
 
 	int8_t d=2*dy-dx;
 	for (uint8_t y=y0, x=x0;;x++) {
-		setPointFG((x<<8)|y);
+		setPointXG(x,y);
 		if (d<=0)
 			d+=2*dy;
 		else {
@@ -501,11 +423,11 @@ static void lineFastQ1(uint8_t x0, uint8_t y0, int8_t dx, int8_t dy) {
 	}
 }
 
-static void lineFastQ2(uint8_t x0, uint8_t y0, int8_t dx, int8_t dy) { 
+static void lineQ2(uint8_t x0, uint8_t y0, int8_t dx, int8_t dy) { 
 
 	int8_t d=2*dy-dx;
 	for (uint8_t y=y0, x=x0;;x++) {
-		setPointFG((x<<8)|y);
+		setPointXG(x,y);
 		if (d<=0)
 			d+=2*dy;
 		else {
@@ -516,11 +438,11 @@ static void lineFastQ2(uint8_t x0, uint8_t y0, int8_t dx, int8_t dy) {
 	}
 }
 
-static void lineFastQ3(uint8_t x0, uint8_t y0, int8_t dx, int8_t dy) { 
+static void lineQ3(uint8_t x0, uint8_t y0, int8_t dx, int8_t dy) { 
 
 	int8_t d=2*dx-dy;
 	for (uint8_t y=y0, x=x0;;y--) {
-		setPointFG((x<<8)|y);
+		setPointXG(x,y);
 		if (d<=0)
 			d+=2*dx;
 		else {
@@ -531,22 +453,22 @@ static void lineFastQ3(uint8_t x0, uint8_t y0, int8_t dx, int8_t dy) {
 	}
 }
 
-void lineFast(uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1) {
+void line(uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1) {
 	    
     if (x0==x1) {
 		if (y0==y1) {
-			setPointFG((x0<<8)|y0);
+			setPointXG(x0,y0);
 		} else if (y0<y1) {
-			lineFastV(x0,y0,y1); 
+			lineV(x0,y0,y1); 
 		} else {
-			lineFastV(x0,y1,y0);
+			lineV(x0,y1,y0);
 		}
 	} else {
 		if (y0==y1) {
 			if (x0<x1) {
-				lineFastH(x0,x1,y0); 
+				lineH(x0,x1,y0); 
 			} else {
-				lineFastH(x1,x0,y0);
+				lineH(x1,x0,y0);
 			}
 		} else {
 			if (x1<x0) {
@@ -561,19 +483,21 @@ void lineFast(uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1) {
 			if (y0<y1) {
 				uint8_t dy = y1-y0;
 				if (dx<dy) {
-					lineFastQ0(x0,y0,dx,dy);
+					lineQ0(x0,y0,dx,dy);
 				} else {
-					lineFastQ1(x0,y0,dx,dy);
+					lineQ1(x0,y0,dx,dy);
 				}
 			} else {
 				uint8_t dy = y0-y1;
 				if (dx<dy) {
-					lineFastQ3(x0,y0,dx,dy);
+					lineQ3(x0,y0,dx,dy);
 				} else {
-					lineFastQ2(x0,y0,dx,dy);
+					lineQ2(x0,y0,dx,dy);
 				}
 			}
 		}
 	}	
 }
+
+
 

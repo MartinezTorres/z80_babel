@@ -29,17 +29,4 @@ extern const uint8_t font_thin_len[];
 ML_REQUEST_D(font_thin);
 
 
-ML_REQUEST_B(bench_calibration); 
-ML_REQUEST_B(bench_c); 
-ML_REQUEST_B(bench_cc); 
-ML_REQUEST_B(bench_d); 
-ML_REQUEST_B(bench_zig); 
-ML_REQUEST_B(bench_rs); 
-
-
-uint16_t sieve_of_eratosthenes_calibration(uint16_t *out, uint8_t *work, uint16_t max );
-uint16_t sieve_of_eratosthenes_c(uint16_t *out, uint8_t *work, uint16_t max );
-uint16_t sieve_of_eratosthenes_cc(uint16_t *out, uint8_t *work, uint16_t max );
-uint16_t sieve_of_eratosthenes_d(uint16_t *out, uint8_t *work, uint16_t max );
-uint16_t sieve_of_eratosthenes_zig(uint16_t *out, uint8_t *work, uint16_t max );
-uint16_t sieve_of_eratosthenes_rust(uint16_t *out, uint8_t *work, uint16_t max );
+__at ((48+2)*1024U) uint8_t algorithm_work_area[4*1024U];

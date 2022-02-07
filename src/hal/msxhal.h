@@ -10,12 +10,14 @@
 // INLINE and FASTCALL
 #ifdef __SDCC
 
-	#define INLINE inline
+    #define INLINE inline
 
 #else
 
-	#define INLINE static inline
+    #define __at(x) 
+    #define INLINE static inline
     #define __z88dk_fastcall
+    #define __nonbanked
 #endif
 
 
@@ -197,9 +199,10 @@ INLINE uint8_t msxhal_get_msx_version()   { return BIOS_ROMID; }
 ////////////////////////////////////////////////////////////////////////
 // TURBO FUNCTIONS
 
-#ifdef __SDCC
 
 INLINE void msxhal_request60Hz() {
+
+#ifdef __SDCC
     __asm
     push hl
     push af
@@ -213,29 +216,31 @@ INLINE void msxhal_request60Hz() {
     pop af
     pop hl
     __endasm; 
+#endif
 }
 
 INLINE void msxhal_enableR800() {
+
+#ifdef __SDCC
     __asm
     ld   A,(#0x0180) ; CHGCPU
     cp   #0xC3
     ld   a,#0x81              ; can be ld a,81h for R800 ROM if you wish
     call z,#0x0180
     __endasm; 
+#endif
 }
 
 typedef void (*isr_function)();
 INLINE void msxhal_install_isr(isr_function new_isr) {
 
-//    void *HTIMI = (void *)0xFD9F;
+    (void)new_isr;
+#ifdef __SDCC
 
     *((uint8_t *)0xFD9F) = 0xC3; // JP opcode
     *((isr_function *)(0xFD9F+1)) = new_isr;
+#endif
 }
 
 
-#else
-INLINE void msxhal_request60Hz() {}
-INLINE void msxhal_enableR800() {}
-#endif
 

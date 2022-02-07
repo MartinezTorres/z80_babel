@@ -5,7 +5,7 @@ export fn add(a: u8, b: u8) u8 {
 return a + b;
 }
 
-export fn sieve_of_eratosthenes_zig(result: [*]u16, work: [*]u16, max: u16 ) u16 {
+export fn sieve_of_eratosthenes_zig(result: [*]u16, work: [*]u8, max: u16 ) u16 {
     
     {
 		var i: u16 = 0;
@@ -51,3 +51,5 @@ export fn sieve_of_eratosthenes_zig(result: [*]u16, work: [*]u16, max: u16 ) u16
     return n_primes;
     
 }
+
+export fn sieve_of_eratosthenes_zig_end() u16 { return 0; }

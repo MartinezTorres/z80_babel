@@ -2,7 +2,6 @@
 #![no_main]
 #![allow(dead_code, mutable_transmutes, non_camel_case_types, non_snake_case,
          non_upper_case_globals, unused_assignments, unused_mut)]
-#![feature(register_tool)]
 
 
 #[no_mangle]
@@ -46,6 +45,8 @@ pub unsafe extern "C" fn sieve_of_eratosthenes_rust(mut out: *mut u16,
     return n_primes;
 }
 
+#[no_mangle]
+pub unsafe extern "C" fn sieve_of_eratosthenes_rust_end() -> u16 { return 0; }
 
 
 

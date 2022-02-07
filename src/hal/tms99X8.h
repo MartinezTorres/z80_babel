@@ -156,6 +156,12 @@ TMS99X8_Status;
 	INLINE void writeVDP1(uint8_t v) { VDP1 = v; }
 
 	INLINE uint8_t readVDP1() {	return VDP1; }
+#else
+	INLINE void writeVDP0(uint8_t v) { (void)v; }
+
+	INLINE void writeVDP1(uint8_t v) { (void)v; }
+
+	INLINE uint8_t readVDP1() {	return 0; }
 #endif
 
 INLINE uint8_t TMS99X8_getStatusFromBios() { return TMS99X8_status.status; }
@@ -170,7 +176,7 @@ INLINE void TMS99X8_syncRegister(uint8_t reg) {
 
 INLINE void TMS99X8_syncFlags() {
 
-	register uint8_t *r = (uint8_t *)TMS99X8;
+	register uint8_t *r = (uint8_t *)&TMS99X8;
 	register uint8_t idx = 0x80;
 	REPEAT2( 
 		writeVDP1(*r++);
@@ -180,7 +186,7 @@ INLINE void TMS99X8_syncFlags() {
 
 INLINE void TMS99X8_syncAllRegisters() {
 
-	register uint8_t *r = (uint8_t *)TMS99X8;
+	register uint8_t *r = (uint8_t *)&TMS99X8;
 	register uint8_t idx = 0x80;
 	REPEAT8( 
 		writeVDP1(*r++);

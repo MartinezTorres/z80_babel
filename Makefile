@@ -1,4 +1,4 @@
-NAME := msx-karts
+NAME := z80_babel
 
 .PHONY: all clean
 .SECONDARY:  
@@ -14,8 +14,11 @@ SED = sed
 SDCC = /home/manel/sdcc-4.1.14
 
 CCZ80 = $(SDCC)/bin/sdcc
-MAX_ALLOCS = 5000
-CCZ80FLAGS = --std-sdcc11 -mz80 --disable-warning 110 --disable-warning 126 --no-std-crt0 --out-fmt-ihx --max-allocs-per-node $(MAX_ALLOCS) --allow-unsafe-read --nostdlib --no-xinit-opt --opt-code-speed --reserve-regs-iy -I$(SDCC)/device/include
+MAX_ALLOCS = 20000
+#CCZ80FLAGS = --std-sdcc11 -mz80 --disable-warning 110 --disable-warning 126 --no-std-crt0 --out-fmt-ihx --max-allocs-per-node $(MAX_ALLOCS) --allow-unsafe-read --nostdlib --no-xinit-opt --opt-code-speed --reserve-regs-iy -I$(SDCC)/device/include
+
+CCZ80FLAGS = --std-sdcc11 -mz80 --disable-warning 110 --disable-warning 126 --no-std-crt0 --out-fmt-ihx --max-allocs-per-node $(MAX_ALLOCS) --allow-unsafe-read --nostdlib --no-xinit-opt --opt-code-speed -I$(SDCC)/device/include
+CCZ80FLAGS += -D__HIDDEN__= -D__attribute__\(a\)= -D__builtin_unreachable\(\)=while\(1\)\; -c -D MSX
 
 # ASM
 ASM = $(SDCC)/bin/sdasz80
@@ -27,7 +30,7 @@ LLVM_CBE_FLAGS = --cbe-declare-locals-late
 
 #CLANG
 CLANG = clang
-CLANG_FLAGS = -S -emit-llvm -Os -target avr -Wno-avr-rtlib-linking-quirks -Wall -Wextra
+CLANG_FLAGS = -S -emit-llvm -Os -target avr -Wno-avr-rtlib-linking-quirks -Wall -Wextra -Iext/avr-libstdcpp/include/
 
 #DLANG
 DLANG = ldmd2 
@@ -51,18 +54,18 @@ MEGALINKER = ~/repos/manel/msx/megalinker/megalinker
 
 # OPENMSX
 OPENMSX_BIN = openmsx
-OPENMSX_DEF = $(OPENMSX_BIN)                          $(OPENMSX_PARAM) -carta 
-OPENMSX1    = $(OPENMSX_BIN) -machine C-BIOS_MSX1     $(OPENMSX_PARAM) -carta 
-OPENMSX1_JP = $(OPENMSX_BIN) -machine C-BIOS_MSX1_JP  $(OPENMSX_PARAM) -carta 
-OPENMSX2    = $(OPENMSX_BIN) -machine C-BIOS_MSX2     $(OPENMSX_PARAM) -carta 
-OPENMSX2P   = $(OPENMSX_BIN) -machine C-BIOS_MSX2+_JP $(OPENMSX_PARAM) -carta 
+OPENMSX_DEF = $(OPENMSX_BIN)                            $(OPENMSX_PARAM) -carta 
+OPENMSX1    = $(OPENMSX_BIN) -machine Philips_VG_8020   $(OPENMSX_PARAM) -carta 
+OPENMSX1_JP = $(OPENMSX_BIN) -machine C-BIOS_MSX1_JP    $(OPENMSX_PARAM) -carta 
+OPENMSX2    = $(OPENMSX_BIN) -machine C-BIOS_MSX2       $(OPENMSX_PARAM) -carta 
+OPENMSX2P   = $(OPENMSX_BIN) -machine C-BIOS_MSX2+_JP   $(OPENMSX_PARAM) -carta 
 OPENMSXTR   = $(OPENMSX_BIN) -machine Panasonic_FS-A1GT $(OPENMSX_PARAM) -carta 
 
 MSG = "\033[1;32m[$(@)]\033[1;31m\033[0m"
 
 
 ##########################################################
-### COLLECT SOURCES
+### COLLECT SOURCES TEST PROGRAM
 
 #recursive wildcard
 rwildcard=$(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2) $(filter $(subst *,%,$2),$d))
@@ -94,6 +97,37 @@ OBJ    += $(addprefix tmp/,$(SOURCES_DLANG:.d=.rel))
 OBJ    += $(addprefix tmp/,$(SOURCES_RUST:.rs=.rel))
 OBJ    += $(addprefix tmp/,$(SOURCES_ZIG:.zig=.rel))
 
+##########################################################
+### COLLECT BENCHMARKS
+
+INCLUDES              += -Ibench
+HEADERS               += $(call rwildcard, bench/, *.h) 
+
+BENCH_SOURCES_C       += $(call rwildcard, bench/, *.c)
+BENCH_SOURCES_S       += $(call rwildcard, bench/, *.s) 
+BENCH_SOURCES_ASM     += $(call rwildcard, bench/, *.asm) 
+
+BENCH_SOURCES_CPP     += $(call rwildcard, bench/, *.cpp)
+BENCH_SOURCES_CC      += $(call rwildcard, bench/, *.cc)
+BENCH_SOURCES_FORTRAN += $(call rwildcard, bench/, *.f)
+BENCH_SOURCES_DLANG   += $(call rwildcard, bench/, *.d)
+BENCH_SOURCES_RUST    += $(call rwildcard, bench/, *.rs)
+BENCH_SOURCES_ZIG     += $(call rwildcard, bench/, *.zig)
+
+ALLOCS := 1k 2k 5k 10k 20k 50k
+
+OBJ    += $(foreach ALLOC, $(ALLOCS), $(addprefix tmp/,$(BENCH_SOURCES_C:.c=_c_$(ALLOC).$(ALLOC).rel)))
+OBJ    += $(foreach ALLOC, $(ALLOCS), $(addprefix tmp/,$(BENCH_SOURCES_S:.s=_s_$(ALLOC).$(ALLOC).rel)))
+OBJ    += $(foreach ALLOC, $(ALLOCS), $(addprefix tmp/,$(BENCH_SOURCES_ASM:.asm=_asm_$(ALLOC).$(ALLOC).rel)))
+
+OBJ    += $(foreach ALLOC, $(ALLOCS), $(addprefix tmp/,$(BENCH_SOURCES_CPP:.cpp=_cpp_$(ALLOC).$(ALLOC).rel)))
+OBJ    += $(foreach ALLOC, $(ALLOCS), $(addprefix tmp/,$(BENCH_SOURCES_CC:.cc=_cc_$(ALLOC).$(ALLOC).rel)))
+OBJ    += $(foreach ALLOC, $(ALLOCS), $(addprefix tmp/,$(BENCH_SOURCES_FORTRAN:.f=_f_$(ALLOC).$(ALLOC).rel)))
+OBJ    += $(foreach ALLOC, $(ALLOCS), $(addprefix tmp/,$(BENCH_SOURCES_DLANG:.d=_d_$(ALLOC).$(ALLOC).rel)))
+OBJ    += $(foreach ALLOC, $(ALLOCS), $(addprefix tmp/,$(BENCH_SOURCES_RUST:.rs=_rs_$(ALLOC).$(ALLOC).rel)))
+OBJ    += $(foreach ALLOC, $(ALLOCS), $(addprefix tmp/,$(BENCH_SOURCES_ZIG:.zig=_zig_$(ALLOC).$(ALLOC).rel)))
+
+
 
 ###### SDCC NATIVE: ASM
 tmp/%.rel: %.s $(HEADERS) 
@@ -112,18 +146,46 @@ tmp/%.rel: %.asm $(HEADERS)
 tmp/%.rel: %.c $(HEADERS)
 	@echo -n $(MSG)
 	@mkdir -p $(@D)
+	@$(CLANG) $(CLANG_FLAGS) $(INCLUDES) $< -o $@.clang
 	@$(CCZ80) -c -D MSX $(INCLUDES) $(CCZ80FLAGS) $< -o $@
 	@echo " "`grep "size" tmp/$*.sym | awk 'strtonum("0x"$$4) {print $$2": "strtonum("0x"$$4)" bytes"}'` 
 
 
 ###### LLVM COMMON PIPELINE:
-tmp/%.cbe.c: tmp/%.ll
+#tmp/%.stage1.cbe.c: tmp/%.ll
+#	@echo -n $(MSG)
+#	@mkdir -p $(@D)
+#	@$(LLVM_CBE) --cbe-declare-locals-late $< -o $@
+#	@echo 
+	
+#tmp/%.stage1.c: tmp/%.stage1.cbe.c
+#	@echo -n $(MSG)
+#	@mkdir -p $(@D)
+#	@$(SED) 's/static __forceinline/inline/g' $< > $@
+#	@$(SED) 's/uint8_t\* memset(uint8_t\*, uint32_t, uint16_t);/inline uint8_t\* memset(uint8_t\* dst, uint8_t c, uint16_t sz) {uint8_t \*p = dst; while (sz--) *p++ = c; return dst; }/g' -i $@
+#	@$(SED) '/__noreturn void rust_begin_unwind(struct l_struct_core_KD__KD_panic_KD__KD_PanicInfo\* llvm_cbe_info)/{:a;N;/__builtin_unreachable/{N;N;d};/  }/b;ba}' -i $@
+#	@echo 
+
+#tmp/%.stage1.rel: tmp/%.stage1.c
+#	@echo -n $(MSG)
+#	@mkdir -p $(@D)
+#	@$(CCZ80) -D__HIDDEN__= -D__attribute__\(a\)= -D__builtin_unreachable\(\)=while\(1\)\; -c -D MSX $(INCLUDES) $(CCZ80FLAGS) $< -o $@
+#	@echo " "`grep "size" tmp/$*.stage1.sym | awk 'strtonum("0x"$$4) {print $$2": "strtonum("0x"$$4)" bytes"}'` 
+
+#tmp/%.stage2.ll: tmp/%.stage1.c
+#	@echo -n $(MSG)
+#	@mkdir -p $(@D)
+#	@$(CLANG) $(CLANG_FLAGS) $< -o $@
+#	@echo 
+
+#tmp/%.stage2.cbe.c: tmp/%.stage2.ll
+tmp/%.stage2.cbe.c: tmp/%.ll
 	@echo -n $(MSG)
 	@mkdir -p $(@D)
 	@$(LLVM_CBE) --cbe-declare-locals-late $< -o $@
 	@echo 
 	
-tmp/%.c: tmp/%.cbe.c
+tmp/%.c: tmp/%.stage2.cbe.c
 	@echo -n $(MSG)
 	@mkdir -p $(@D)
 	@$(SED) 's/static __forceinline/inline/g' $< > $@
@@ -131,10 +193,47 @@ tmp/%.c: tmp/%.cbe.c
 	@$(SED) '/__noreturn void rust_begin_unwind(struct l_struct_core_KD__KD_panic_KD__KD_PanicInfo\* llvm_cbe_info)/{:a;N;/__builtin_unreachable/{N;N;d};/  }/b;ba}' -i $@
 	@echo 
 
-tmp/%.rel: tmp/%.c
+
+tmp/%.rel: tmp/%.c 
 	@echo -n $(MSG)
 	@mkdir -p $(@D)
-	@$(CCZ80) -D__HIDDEN__= -D__attribute__\(a\)= -D__builtin_unreachable\(\)=while\(1\)\; -c -D MSX $(INCLUDES) $(CCZ80FLAGS) $< -o $@
+	@$(CCZ80) $(INCLUDES) $(CCZ80FLAGS) $< -o $@
+	@echo " "`grep "size" tmp/$*.sym | awk 'strtonum("0x"$$4) {print $$2": "strtonum("0x"$$4)" bytes"}'` 
+
+tmp/%.rel: tmp/%.1k.c 
+	@echo -n $(MSG)
+	@mkdir -p $(@D)
+	@$(CCZ80) $(INCLUDES) $(CCZ80FLAGS) --max-allocs-per-node 1000 $< -o $@
+	@echo " "`grep "size" tmp/$*.sym | awk 'strtonum("0x"$$4) {print $$2": "strtonum("0x"$$4)" bytes"}'` 
+
+tmp/%.rel: tmp/%.2k.c 
+	@echo -n $(MSG)
+	@mkdir -p $(@D)
+	@$(CCZ80) $(INCLUDES) $(CCZ80FLAGS) --max-allocs-per-node 2000 $< -o $@
+	@echo " "`grep "size" tmp/$*.sym | awk 'strtonum("0x"$$4) {print $$2": "strtonum("0x"$$4)" bytes"}'` 
+
+tmp/%.rel: tmp/%.5k.c 
+	@echo -n $(MSG)
+	@mkdir -p $(@D)
+	@$(CCZ80) $(INCLUDES) $(CCZ80FLAGS) --max-allocs-per-node 5000 $< -o $@
+	@echo " "`grep "size" tmp/$*.sym | awk 'strtonum("0x"$$4) {print $$2": "strtonum("0x"$$4)" bytes"}'` 
+
+tmp/%.rel: tmp/%.10k.c 
+	@echo -n $(MSG)
+	@mkdir -p $(@D)
+	@$(CCZ80) $(INCLUDES) $(CCZ80FLAGS) --max-allocs-per-node 10000 $< -o $@
+	@echo " "`grep "size" tmp/$*.sym | awk 'strtonum("0x"$$4) {print $$2": "strtonum("0x"$$4)" bytes"}'` 
+
+tmp/%.rel: tmp/%.20k.c 
+	@echo -n $(MSG)
+	@mkdir -p $(@D)
+	@$(CCZ80) $(INCLUDES) $(CCZ80FLAGS) --max-allocs-per-node 20000 $< -o $@
+	@echo " "`grep "size" tmp/$*.sym | awk 'strtonum("0x"$$4) {print $$2": "strtonum("0x"$$4)" bytes"}'` 
+
+tmp/%.rel: tmp/%.50k.c 
+	@echo -n $(MSG)
+	@mkdir -p $(@D)
+	@$(CCZ80) $(INCLUDES) $(CCZ80FLAGS) --max-allocs-per-node 50000 $< -o $@
 	@echo " "`grep "size" tmp/$*.sym | awk 'strtonum("0x"$$4) {print $$2": "strtonum("0x"$$4)" bytes"}'` 
 
 
