@@ -188,9 +188,13 @@ void push_bar_up(uint8_t y, uint8_t verified) {
     
     copyLine(y, y+1); draw_color_bar(y+0,0+(verified?0x80:00));
     
-    if (0) for (uint8_t k=1; k<13; k++) {
-		
-		copyLine(y+k, y+1+k); draw_color_bar(y+k,k+(verified?0x80:00));
+    if (0) {
+		for (uint8_t k=1; k<13; k++) {
+			copyLine(y+k, y+1+k); 
+			draw_color_bar(y+k,k+(verified?0x80:00));
+		}
+			
+		return;
 	}
    
 	if (((y+1) & 63) > 57) {
@@ -209,7 +213,7 @@ void push_bar_up(uint8_t y, uint8_t verified) {
 		push_up_lines_6(y+1);
     }
 
-    if (((y+6) & 63) > 57) {
+    if (((y+7) & 63) > 57) {
 	
 		copyLine(y+ 7, y+ 8); draw_color_bar(y+ 7, 7+(verified?0x80:00));
 		copyLine(y+ 8, y+ 9); draw_color_bar(y+ 8, 8+(verified?0x80:00));

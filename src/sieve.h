@@ -1,6 +1,5 @@
 #pragma once
 
-ML_REQUEST_B(bench_calibration); 
 ML_REQUEST_B(bench_c); 
 ML_REQUEST_B(bench_cc); 
 ML_REQUEST_B(bench_d); 
@@ -8,64 +7,103 @@ ML_REQUEST_B(bench_zig);
 ML_REQUEST_B(bench_rs); 
 ML_REQUEST_B(bench_f); 
 
+#define DEF_SIEVE(F)  \
+	uint16_t F##_1k (uint16_t *, uint8_t *, uint16_t); void F##_end_1k (); \
+	uint16_t F##_2k (uint16_t *, uint8_t *, uint16_t); void F##_end_2k (); \
+	uint16_t F##_5k (uint16_t *, uint8_t *, uint16_t); void F##_end_5k (); \
+	uint16_t F##_10k(uint16_t *, uint8_t *, uint16_t); void F##_end_10k(); \
+	uint16_t F##_20k(uint16_t *, uint8_t *, uint16_t); void F##_end_20k(); \
+	uint16_t F##_50k(uint16_t *, uint8_t *, uint16_t); void F##_end_50k(); 
 
-// EMPTY FUNCTION FOR CALIBRATION
-uint16_t sieve_of_eratosthenes_calibration(uint16_t *primes, uint8_t *work, uint16_t max );
-void sieve_of_eratosthenes_calibration_end();
-
+#define DEF_SIEVE_FORTRAN(F)  \
+	int32_t F##__1k (uint64_t *, uint64_t *, uint64_t *); void F##_end__1k (); \
+	int32_t F##__2k (uint64_t *, uint64_t *, uint64_t *); void F##_end__2k (); \
+	int32_t F##__5k (uint64_t *, uint64_t *, uint64_t *); void F##_end__5k (); \
+	int32_t F##__10k(uint64_t *, uint64_t *, uint64_t *); void F##_end__10k(); \
+	int32_t F##__20k(uint64_t *, uint64_t *, uint64_t *); void F##_end__20k(); \
+	int32_t F##__50k(uint64_t *, uint64_t *, uint64_t *); void F##_end__50k(); 
+	
 
 // C
-uint16_t sieve_of_eratosthenes_c_1(uint16_t *primes, uint8_t *work, uint16_t max );
-void sieve_of_eratosthenes_c_1_end();
+ML_REQUEST_B(sieve_c_1k); 
+ML_REQUEST_B(sieve_c_2k); 
+ML_REQUEST_B(sieve_c_5k); 
+ML_REQUEST_B(sieve_c_10k); 
+ML_REQUEST_B(sieve_c_20k); 
+ML_REQUEST_B(sieve_c_50k); 
 
-uint16_t sieve_of_eratosthenes_c_2(uint16_t *primes, uint8_t *work, uint16_t max );
-void sieve_of_eratosthenes_c_2_end();
-
-uint16_t sieve_of_eratosthenes_c_3(uint16_t *primes, uint8_t *work, uint16_t max );
-void sieve_of_eratosthenes_c_3_end();
+DEF_SIEVE(sieve_of_eratosthenes_c_1)
+DEF_SIEVE(sieve_of_eratosthenes_c_2)
+DEF_SIEVE(sieve_of_eratosthenes_c_3)
 
 
 // C++
-uint16_t sieve_of_eratosthenes_cc_1(uint16_t *primes, uint8_t *work, uint16_t max );
-void sieve_of_eratosthenes_cc_1_end();
+ML_REQUEST_B(sieve_cc_1k); 
+ML_REQUEST_B(sieve_cc_2k); 
+ML_REQUEST_B(sieve_cc_5k); 
+ML_REQUEST_B(sieve_cc_10k); 
+ML_REQUEST_B(sieve_cc_20k); 
+ML_REQUEST_B(sieve_cc_50k); 
 
-uint16_t sieve_of_eratosthenes_cc_2(uint16_t *primes, uint8_t *work, uint16_t max );
-void sieve_of_eratosthenes_cc_2_end();
-
-uint16_t sieve_of_eratosthenes_cc_3(uint16_t *primes, uint8_t *work, uint16_t max );
-void sieve_of_eratosthenes_cc_3_end();
+DEF_SIEVE(sieve_of_eratosthenes_cc_1)
+DEF_SIEVE(sieve_of_eratosthenes_cc_2)
+DEF_SIEVE(sieve_of_eratosthenes_cc_3)
 
 
-// C
-uint16_t sieve_of_eratosthenes_d_1(uint16_t *primes, uint8_t *work, uint16_t max );
-void sieve_of_eratosthenes_d_1_end();
+// D LANG
+ML_REQUEST_B(sieve_d_1k); 
+ML_REQUEST_B(sieve_d_2k); 
+ML_REQUEST_B(sieve_d_5k); 
+ML_REQUEST_B(sieve_d_10k); 
+ML_REQUEST_B(sieve_d_20k); 
+ML_REQUEST_B(sieve_d_50k); 
 
-uint16_t sieve_of_eratosthenes_d_2(uint16_t *primes, uint8_t *work, uint16_t max );
-void sieve_of_eratosthenes_d_2_end();
-
-uint16_t sieve_of_eratosthenes_d_3(uint16_t *primes, uint8_t *work, uint16_t max );
-void sieve_of_eratosthenes_d_3_end();
+DEF_SIEVE(sieve_of_eratosthenes_d_1)
+DEF_SIEVE(sieve_of_eratosthenes_d_2)
+DEF_SIEVE(sieve_of_eratosthenes_d_3)
 
 
 // ZIG
-uint16_t sieve_of_eratosthenes_zig(uint16_t *primes, uint8_t *work, uint16_t max );
-void sieve_of_eratosthenes_zig_end();
+ML_REQUEST_B(sieve_zig_1k); 
+ML_REQUEST_B(sieve_zig_2k); 
+ML_REQUEST_B(sieve_zig_5k); 
+ML_REQUEST_B(sieve_zig_10k); 
+ML_REQUEST_B(sieve_zig_20k); 
+ML_REQUEST_B(sieve_zig_50k); 
+
+DEF_SIEVE(sieve_of_eratosthenes_zig)
 
 
 // RUST
-uint16_t sieve_of_eratosthenes_rust(uint16_t *primes, uint8_t *work, uint16_t max );
-void sieve_of_eratosthenes_rust_end();
+ML_REQUEST_B(sieve_rs_1k); 
+ML_REQUEST_B(sieve_rs_2k); 
+ML_REQUEST_B(sieve_rs_5k); 
+ML_REQUEST_B(sieve_rs_10k); 
+ML_REQUEST_B(sieve_rs_20k); 
+ML_REQUEST_B(sieve_rs_50k); 
+
+DEF_SIEVE(sieve_of_eratosthenes_rust)
 
 
 // FORTRAN
-int32_t sieve_of_eratosthenes_fortran_(uint64_t*, uint64_t*, uint64_t*);
-void sieve_of_eratosthenes_fortran_end_();
+ML_REQUEST_B(sieve_f_1k); 
+ML_REQUEST_B(sieve_f_2k); 
+ML_REQUEST_B(sieve_f_5k); 
+ML_REQUEST_B(sieve_f_10k); 
+ML_REQUEST_B(sieve_f_20k); 
+ML_REQUEST_B(sieve_f_50k); 
 
-static uint16_t sieve_of_eratosthenes_fortran(uint16_t *primes, uint8_t *work, uint16_t max ) {
+DEF_SIEVE_FORTRAN(sieve_of_eratosthenes_fortran)
+
+uint16_t sieve_of_eratosthenes_fortran_50k(uint16_t *primes, uint8_t *work, uint16_t max ) {
 	
-	return sieve_of_eratosthenes_fortran_((uint64_t *)primes, (uint64_t *)work, (uint64_t *)&max);
+	return sieve_of_eratosthenes_fortran__50k((uint64_t *)primes, (uint64_t *)work, (uint64_t *)&max);
 }
 
+//static uint16_t sieve_of_eratosthenes_fortran_50k(uint16_t *primes, uint8_t *work, uint16_t max ) {
+	
+//	return sieve_of_eratosthenes_fortran__50k((uint64_t *)primes, (uint64_t *)work, (uint64_t *)&max);
+//}
 
 
 typedef struct {
@@ -92,9 +130,9 @@ static void run_test_sieve_of_erastosthenes(T_FN_SIEVE f) {
 
 static void run_reference_sieve_of_erastosthenes() {
 	
-	uint8_t old = ML_LOAD_MODULE_B(bench_c);
+	uint8_t old = ML_LOAD_MODULE_B(sieve_c_50k);
 				
-	sieve.n_primes_reference = sieve_of_eratosthenes_c_1(sieve.primes_reference, sieve.work_area, 2048);
+	sieve.n_primes_reference = sieve_of_eratosthenes_c_1_50k(sieve.primes_reference, sieve.work_area, 2048);
 	ML_RESTORE_B(old);
 }
 
@@ -111,114 +149,114 @@ static bool verify_sieve_of_erastosthenes(T_TEST *t, T_TEST_CASE *tc) {
 	return true;
 }
 
-static const T_TEST_CASE test_cases_sieve[] = {
+static const T_TEST_CASE test_cases_sieve_50k[] = {
 	
 	{
 		.name = "C v1",
-		.segment = ML_SEGMENT_B(bench_c),
-		.fn_test = (T_FN)sieve_of_eratosthenes_c_1,
-		.fn_begin = (T_FN)sieve_of_eratosthenes_c_1,
-		.fn_end = sieve_of_eratosthenes_c_1_end
+		.segment = ML_SEGMENT_B(sieve_c_50k),
+		.fn_test = (T_FN)sieve_of_eratosthenes_c_1_50k,
+		.fn_begin = (T_FN)sieve_of_eratosthenes_c_1_50k,
+		.fn_end = sieve_of_eratosthenes_c_1_end_50k
 	},
 
 	
 	{
 		.name = "C v2",
-		.segment = ML_SEGMENT_B(bench_c),
-		.fn_test = (T_FN)sieve_of_eratosthenes_c_2,
-		.fn_begin = (T_FN)sieve_of_eratosthenes_c_2,
-		.fn_end = sieve_of_eratosthenes_c_2_end
+		.segment = ML_SEGMENT_B(sieve_c_50k),
+		.fn_test = (T_FN)sieve_of_eratosthenes_c_2_50k,
+		.fn_begin = (T_FN)sieve_of_eratosthenes_c_2_50k,
+		.fn_end = sieve_of_eratosthenes_c_2_end_50k
 	},
 
 	{
 		.name = "C v3",
-		.segment = ML_SEGMENT_B(bench_c),
-		.fn_test = (T_FN)sieve_of_eratosthenes_c_3,
-		.fn_begin = (T_FN)sieve_of_eratosthenes_c_3,
-		.fn_end = sieve_of_eratosthenes_c_3_end
+		.segment = ML_SEGMENT_B(sieve_c_50k),
+		.fn_test = (T_FN)sieve_of_eratosthenes_c_3_50k,
+		.fn_begin = (T_FN)sieve_of_eratosthenes_c_3_50k,
+		.fn_end = sieve_of_eratosthenes_c_3_end_50k
 	},
 
 	{
 		.name = "C++ v1",
-		.segment = ML_SEGMENT_B(bench_cc),
-		.fn_test = (T_FN)sieve_of_eratosthenes_cc_1,
-		.fn_begin = (T_FN)sieve_of_eratosthenes_cc_1,
-		.fn_end = sieve_of_eratosthenes_cc_1_end
+		.segment = ML_SEGMENT_B(sieve_cc_50k),
+		.fn_test = (T_FN)sieve_of_eratosthenes_cc_1_50k,
+		.fn_begin = (T_FN)sieve_of_eratosthenes_cc_1_50k,
+		.fn_end = sieve_of_eratosthenes_cc_1_end_50k
 	},
 
 	{
 		.name = "C++ v2",
-		.segment = ML_SEGMENT_B(bench_cc),
-		.fn_test = (T_FN)sieve_of_eratosthenes_cc_2,
-		.fn_begin = (T_FN)sieve_of_eratosthenes_cc_2,
-		.fn_end = sieve_of_eratosthenes_cc_2_end
+		.segment = ML_SEGMENT_B(sieve_cc_50k),
+		.fn_test = (T_FN)sieve_of_eratosthenes_cc_2_50k,
+		.fn_begin = (T_FN)sieve_of_eratosthenes_cc_2_50k,
+		.fn_end = sieve_of_eratosthenes_cc_2_end_50k
 	},
 
 	{
 		.name = "C++ v3",
-		.segment = ML_SEGMENT_B(bench_cc),
-		.fn_test = (T_FN)sieve_of_eratosthenes_cc_3,
-		.fn_begin = (T_FN)sieve_of_eratosthenes_cc_3,
-		.fn_end = sieve_of_eratosthenes_cc_3_end
+		.segment = ML_SEGMENT_B(sieve_cc_50k),
+		.fn_test = (T_FN)sieve_of_eratosthenes_cc_3_50k,
+		.fn_begin = (T_FN)sieve_of_eratosthenes_cc_3_50k,
+		.fn_end = sieve_of_eratosthenes_cc_3_end_50k
 	},
 
 
 	{
 		.name = "D v1",
-		.segment = ML_SEGMENT_B(bench_d),
-		.fn_test = (T_FN)sieve_of_eratosthenes_d_1,
-		.fn_begin = (T_FN)sieve_of_eratosthenes_d_1,
-		.fn_end = sieve_of_eratosthenes_d_1_end
+		.segment = ML_SEGMENT_B(sieve_d_50k),
+		.fn_test = (T_FN)sieve_of_eratosthenes_d_1_50k,
+		.fn_begin = (T_FN)sieve_of_eratosthenes_d_1_50k,
+		.fn_end = sieve_of_eratosthenes_d_1_end_50k
 	},
 	
 	{
 		.name = "D v2",
-		.segment = ML_SEGMENT_B(bench_d),
-		.fn_test = (T_FN)sieve_of_eratosthenes_d_2,
-		.fn_begin = (T_FN)sieve_of_eratosthenes_d_2,
-		.fn_end = sieve_of_eratosthenes_d_2_end
+		.segment = ML_SEGMENT_B(sieve_d_50k),
+		.fn_test = (T_FN)sieve_of_eratosthenes_d_2_50k,
+		.fn_begin = (T_FN)sieve_of_eratosthenes_d_2_50k,
+		.fn_end = sieve_of_eratosthenes_d_2_end_50k
 	},
 
 	{
 		.name = "D v3",
-		.segment = ML_SEGMENT_B(bench_d),
-		.fn_test = (T_FN)sieve_of_eratosthenes_d_3,
-		.fn_begin = (T_FN)sieve_of_eratosthenes_d_3,
-		.fn_end = sieve_of_eratosthenes_d_3_end
+		.segment = ML_SEGMENT_B(sieve_d_50k),
+		.fn_test = (T_FN)sieve_of_eratosthenes_d_3_50k,
+		.fn_begin = (T_FN)sieve_of_eratosthenes_d_3_50k,
+		.fn_end = sieve_of_eratosthenes_d_3_end_50k
 	},
 
 	{
 		.name = "ZIG",
-		.segment = ML_SEGMENT_B(bench_zig),
-		.fn_test = (T_FN)sieve_of_eratosthenes_zig,
-		.fn_begin = (T_FN)sieve_of_eratosthenes_zig,
-		.fn_end = sieve_of_eratosthenes_zig_end
+		.segment = ML_SEGMENT_B(sieve_zig_50k),
+		.fn_test = (T_FN)sieve_of_eratosthenes_zig_50k,
+		.fn_begin = (T_FN)sieve_of_eratosthenes_zig_50k,
+		.fn_end = sieve_of_eratosthenes_zig_end_50k
 	},
 	
 	{
 		.name = "RUST",
-		.segment = ML_SEGMENT_B(bench_rs),
-		.fn_test = (T_FN)sieve_of_eratosthenes_rust,
-		.fn_begin = (T_FN)sieve_of_eratosthenes_rust,
-		.fn_end = sieve_of_eratosthenes_rust_end
+		.segment = ML_SEGMENT_B(sieve_rs_50k),
+		.fn_test = (T_FN)sieve_of_eratosthenes_rust_50k,
+		.fn_begin = (T_FN)sieve_of_eratosthenes_rust_50k,
+		.fn_end = sieve_of_eratosthenes_rust_end_50k
 	},
 
 	{
 		.name = "FORTRAN",
-		.segment = ML_SEGMENT_B(bench_f),
-		.fn_test = (T_FN)sieve_of_eratosthenes_fortran,
-		.fn_begin = (T_FN)sieve_of_eratosthenes_fortran_,
-		.fn_end = sieve_of_eratosthenes_fortran_end_
+		.segment = ML_SEGMENT_B(sieve_f_50k),
+		.fn_test = (T_FN)sieve_of_eratosthenes_fortran_50k,
+		.fn_begin = (T_FN)sieve_of_eratosthenes_fortran__50k,
+		.fn_end = sieve_of_eratosthenes_fortran_end__50k
 	},
 };
 
-static T_TEST_RESULT test_results_sieve[12];
+static T_TEST_RESULT test_results_sieve_50k[12];
 
-static const T_TEST test_sieve = {
+static const T_TEST test_sieve_50k = {
 	
-	.name = "Sieve of Eratosthenes",
-	.test_cases = test_cases_sieve,
-	.test_results = test_results_sieve,
+	.name = "Sieve of Eratosthenes (50k)",
+	.test_cases = test_cases_sieve_50k,
+	.test_results = test_results_sieve_50k,
 	.n_test_cases = 12,
 	.fn_reference = run_reference_sieve_of_erastosthenes,
 	.fn_verify = (T_FN_VERIFY_TEST)verify_sieve_of_erastosthenes,

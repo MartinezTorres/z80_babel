@@ -1,10 +1,3 @@
-
-
-
-export fn add(a: u8, b: u8) u8 {
-return a + b;
-}
-
 export fn sieve_of_eratosthenes_zig(result: [*]u16, work: [*]u8, max: u16 ) u16 {
     
     {

@@ -223,9 +223,9 @@ INLINE void msxhal_enableR800() {
 
 #ifdef __SDCC
     __asm
-    ld   A,(#0x0180) ; CHGCPU
-    cp   #0xC3
-    ld   a,#0x81              ; can be ld a,81h for R800 ROM if you wish
+    ld   a,(#0x0180)
+    cp   a, #0xc3
+    ld   a,#0x81            
     call z,#0x0180
     __endasm; 
 #endif

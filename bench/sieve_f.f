@@ -36,12 +36,8 @@
             RETURN
         END FUNCTION
 
-        INTEGER*2 FUNCTION sieve_of_eratosthenes_fortran_end(r, w, sz)
+        INTEGER*2 FUNCTION sieve_of_eratosthenes_fortran_end()
 
-            INTEGER*2 :: sz
-            INTEGER*2 :: r(0:sz-1)
-            INTEGER*1 :: w(0:sz-1)
-            INTEGER*2 :: i,j,n_primes
-            
+            sieve_of_eratosthenes_fortran_end = 0
             RETURN
         END FUNCTION

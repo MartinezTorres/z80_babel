@@ -18,7 +18,7 @@ MAX_ALLOCS = 20000
 #CCZ80FLAGS = --std-sdcc11 -mz80 --disable-warning 110 --disable-warning 126 --no-std-crt0 --out-fmt-ihx --max-allocs-per-node $(MAX_ALLOCS) --allow-unsafe-read --nostdlib --no-xinit-opt --opt-code-speed --reserve-regs-iy -I$(SDCC)/device/include
 
 CCZ80FLAGS = --std-sdcc11 -mz80 --disable-warning 110 --disable-warning 126 --no-std-crt0 --out-fmt-ihx --max-allocs-per-node $(MAX_ALLOCS) --allow-unsafe-read --nostdlib --no-xinit-opt --opt-code-speed -I$(SDCC)/device/include
-CCZ80FLAGS += -D__HIDDEN__= -D__attribute__\(a\)= -D__builtin_unreachable\(\)=while\(1\)\; -c -D MSX
+CCZ80FLAGS += -D__HIDDEN__= -D__attribute__\(a\)= -D__builtin_unreachable\(\)=while\(1\)\; -D MSX
 
 # ASM
 ASM = $(SDCC)/bin/sdasz80
@@ -116,17 +116,18 @@ BENCH_SOURCES_ZIG     += $(call rwildcard, bench/, *.zig)
 
 ALLOCS := 1k 2k 5k 10k 20k 50k
 
-OBJ    += $(foreach ALLOC, $(ALLOCS), $(addprefix tmp/,$(BENCH_SOURCES_C:.c=_c_$(ALLOC).$(ALLOC).rel)))
-OBJ    += $(foreach ALLOC, $(ALLOCS), $(addprefix tmp/,$(BENCH_SOURCES_S:.s=_s_$(ALLOC).$(ALLOC).rel)))
-OBJ    += $(foreach ALLOC, $(ALLOCS), $(addprefix tmp/,$(BENCH_SOURCES_ASM:.asm=_asm_$(ALLOC).$(ALLOC).rel)))
+OBJ    += $(foreach ALLOC, $(ALLOCS), $(addprefix tmp/,$(BENCH_SOURCES_C:.c=_$(ALLOC).rel)))
+OBJ    += $(foreach ALLOC, $(ALLOCS), $(addprefix tmp/,$(BENCH_SOURCES_S:.s=_$(ALLOC).rel)))
+OBJ    += $(foreach ALLOC, $(ALLOCS), $(addprefix tmp/,$(BENCH_SOURCES_ASM:.asm=_$(ALLOC).rel)))
 
-OBJ    += $(foreach ALLOC, $(ALLOCS), $(addprefix tmp/,$(BENCH_SOURCES_CPP:.cpp=_cpp_$(ALLOC).$(ALLOC).rel)))
-OBJ    += $(foreach ALLOC, $(ALLOCS), $(addprefix tmp/,$(BENCH_SOURCES_CC:.cc=_cc_$(ALLOC).$(ALLOC).rel)))
-OBJ    += $(foreach ALLOC, $(ALLOCS), $(addprefix tmp/,$(BENCH_SOURCES_FORTRAN:.f=_f_$(ALLOC).$(ALLOC).rel)))
-OBJ    += $(foreach ALLOC, $(ALLOCS), $(addprefix tmp/,$(BENCH_SOURCES_DLANG:.d=_d_$(ALLOC).$(ALLOC).rel)))
-OBJ    += $(foreach ALLOC, $(ALLOCS), $(addprefix tmp/,$(BENCH_SOURCES_RUST:.rs=_rs_$(ALLOC).$(ALLOC).rel)))
-OBJ    += $(foreach ALLOC, $(ALLOCS), $(addprefix tmp/,$(BENCH_SOURCES_ZIG:.zig=_zig_$(ALLOC).$(ALLOC).rel)))
+OBJ    += $(foreach ALLOC, $(ALLOCS), $(addprefix tmp/,$(BENCH_SOURCES_CPP:.cpp=_$(ALLOC).rel)))
+OBJ    += $(foreach ALLOC, $(ALLOCS), $(addprefix tmp/,$(BENCH_SOURCES_CC:.cc=_$(ALLOC).rel)))
+OBJ    += $(foreach ALLOC, $(ALLOCS), $(addprefix tmp/,$(BENCH_SOURCES_FORTRAN:.f=_$(ALLOC).rel)))
+OBJ    += $(foreach ALLOC, $(ALLOCS), $(addprefix tmp/,$(BENCH_SOURCES_DLANG:.d=_$(ALLOC).rel)))
+OBJ    += $(foreach ALLOC, $(ALLOCS), $(addprefix tmp/,$(BENCH_SOURCES_RUST:.rs=_$(ALLOC).rel)))
+OBJ    += $(foreach ALLOC, $(ALLOCS), $(addprefix tmp/,$(BENCH_SOURCES_ZIG:.zig=_$(ALLOC).rel)))
 
+#$(info $$OBJ is [${OBJ}])
 
 
 ###### SDCC NATIVE: ASM
@@ -143,12 +144,13 @@ tmp/%.rel: %.asm $(HEADERS)
 	@echo " "`grep "size" tmp/$*.sym | awk 'strtonum("0x"$$4) {print $$2": "strtonum("0x"$$4)" bytes"}'` 
 
 ###### SDCC NATIVE: C
-tmp/%.rel: %.c $(HEADERS)
+tmp/%.c: %.c $(HEADERS)
 	@echo -n $(MSG)
 	@mkdir -p $(@D)
 	@$(CLANG) $(CLANG_FLAGS) $(INCLUDES) $< -o $@.clang
-	@$(CCZ80) -c -D MSX $(INCLUDES) $(CCZ80FLAGS) $< -o $@
-	@echo " "`grep "size" tmp/$*.sym | awk 'strtonum("0x"$$4) {print $$2": "strtonum("0x"$$4)" bytes"}'` 
+	@cp $< $@
+	@#$(CCZ80) -c $(INCLUDES) $(CCZ80FLAGS) $< -o $@
+	@echo 
 
 
 ###### LLVM COMMON PIPELINE:
@@ -197,44 +199,58 @@ tmp/%.c: tmp/%.stage2.cbe.c
 tmp/%.rel: tmp/%.c 
 	@echo -n $(MSG)
 	@mkdir -p $(@D)
-	@$(CCZ80) $(INCLUDES) $(CCZ80FLAGS) $< -o $@
+	@$(CCZ80) -c $(INCLUDES) $(CCZ80FLAGS) $< -o $@
 	@echo " "`grep "size" tmp/$*.sym | awk 'strtonum("0x"$$4) {print $$2": "strtonum("0x"$$4)" bytes"}'` 
 
-tmp/%.rel: tmp/%.1k.c 
-	@echo -n $(MSG)
-	@mkdir -p $(@D)
-	@$(CCZ80) $(INCLUDES) $(CCZ80FLAGS) --max-allocs-per-node 1000 $< -o $@
-	@echo " "`grep "size" tmp/$*.sym | awk 'strtonum("0x"$$4) {print $$2": "strtonum("0x"$$4)" bytes"}'` 
 
-tmp/%.rel: tmp/%.2k.c 
+tmp/%_1k.rel: tmp/%.c 
 	@echo -n $(MSG)
 	@mkdir -p $(@D)
-	@$(CCZ80) $(INCLUDES) $(CCZ80FLAGS) --max-allocs-per-node 2000 $< -o $@
-	@echo " "`grep "size" tmp/$*.sym | awk 'strtonum("0x"$$4) {print $$2": "strtonum("0x"$$4)" bytes"}'` 
+	@$(CCZ80) -c $(INCLUDES) $(CCZ80FLAGS) --max-allocs-per-node 1000 $< -o $@
+	@$(SED) '/^M/ s/$$/_1k/' -i $@
+	@$(SED) '/^S/ s/ Def/_1k Def/' -i $@
+	@echo " "`grep "size" tmp/$*_1k.sym | awk 'strtonum("0x"$$4) {print $$2": "strtonum("0x"$$4)" bytes"}'` 
 
-tmp/%.rel: tmp/%.5k.c 
+tmp/%_2k.rel: tmp/%.c 
 	@echo -n $(MSG)
 	@mkdir -p $(@D)
-	@$(CCZ80) $(INCLUDES) $(CCZ80FLAGS) --max-allocs-per-node 5000 $< -o $@
-	@echo " "`grep "size" tmp/$*.sym | awk 'strtonum("0x"$$4) {print $$2": "strtonum("0x"$$4)" bytes"}'` 
+	@$(CCZ80) -c $(INCLUDES) $(CCZ80FLAGS) --max-allocs-per-node 2000 $< -o $@
+	@$(SED) '/^M/ s/$$/_2k/' -i $@
+	@$(SED) '/^S/ s/ Def/_2k Def/' -i $@
+	@echo " "`grep "size" tmp/$*_2k.sym | awk 'strtonum("0x"$$4) {print $$2": "strtonum("0x"$$4)" bytes"}'` 
 
-tmp/%.rel: tmp/%.10k.c 
+tmp/%_5k.rel: tmp/%.c 
 	@echo -n $(MSG)
 	@mkdir -p $(@D)
-	@$(CCZ80) $(INCLUDES) $(CCZ80FLAGS) --max-allocs-per-node 10000 $< -o $@
-	@echo " "`grep "size" tmp/$*.sym | awk 'strtonum("0x"$$4) {print $$2": "strtonum("0x"$$4)" bytes"}'` 
+	@$(CCZ80) -c $(INCLUDES) $(CCZ80FLAGS) --max-allocs-per-node 5000 $< -o $@
+	@$(SED) '/^M/ s/$$/_5k/' -i $@
+	@$(SED) '/^S/ s/ Def/_5k Def/' -i $@
+	@echo " "`grep "size" tmp/$*_5k.sym | awk 'strtonum("0x"$$4) {print $$2": "strtonum("0x"$$4)" bytes"}'` 
 
-tmp/%.rel: tmp/%.20k.c 
+tmp/%_10k.rel: tmp/%.c 
 	@echo -n $(MSG)
 	@mkdir -p $(@D)
-	@$(CCZ80) $(INCLUDES) $(CCZ80FLAGS) --max-allocs-per-node 20000 $< -o $@
-	@echo " "`grep "size" tmp/$*.sym | awk 'strtonum("0x"$$4) {print $$2": "strtonum("0x"$$4)" bytes"}'` 
+	@$(CCZ80) -c $(INCLUDES) $(CCZ80FLAGS) --max-allocs-per-node 10000 $< -o $@
+	@$(SED) '/^M/ s/$$/_10k/' -i $@
+	@$(SED) '/^S/ s/ Def/_10k Def/' -i $@
+	@echo " "`grep "size" tmp/$*_10k.sym | awk 'strtonum("0x"$$4) {print $$2": "strtonum("0x"$$4)" bytes"}'` 
 
-tmp/%.rel: tmp/%.50k.c 
+tmp/%_20k.rel: tmp/%.c 
 	@echo -n $(MSG)
 	@mkdir -p $(@D)
-	@$(CCZ80) $(INCLUDES) $(CCZ80FLAGS) --max-allocs-per-node 50000 $< -o $@
-	@echo " "`grep "size" tmp/$*.sym | awk 'strtonum("0x"$$4) {print $$2": "strtonum("0x"$$4)" bytes"}'` 
+	@$(CCZ80) -c $(INCLUDES) $(CCZ80FLAGS) --max-allocs-per-node 20000 $< -o $@
+	@$(SED) '/^M/ s/$$/_20k/' -i $@
+	@$(SED) '/^S/ s/ Def/_20k Def/' -i $@
+	@echo " "`grep "size" tmp/$*_20k.sym | awk 'strtonum("0x"$$4) {print $$2": "strtonum("0x"$$4)" bytes"}'` 
+
+tmp/%_50k.rel: tmp/%.c 
+	@echo -n $(MSG)
+	@mkdir -p $(@D)
+	@$(CCZ80) -c $(INCLUDES) $(CCZ80FLAGS) --max-allocs-per-node 50000 $< -o $@
+	@$(SED) '/^M/ s/$$/_50k/' -i $@
+	@$(SED) '/^S/ s/ Def/_50k Def/' -i $@
+	@echo " "`grep "size" tmp/$*_50k.sym | awk 'strtonum("0x"$$4) {print $$2": "strtonum("0x"$$4)" bytes"}'` 
+
 
 
 ###### LLVM FRONTENDS:
@@ -278,7 +294,8 @@ tmp/%.ll: %.zig $(HEADERS)
 	@echo -n $(MSG)
 	@mkdir -p $(@D)
 	@$(ZIG) $(ZIG_FLAGS) -femit-llvm-ir=$@ $<
-	@$(SED) '/attributes #\0/d' -i $@
+	@$(SED) '/attributes \#0/d' -i $@
+	@$(SED) '/attributes \#1/d' -i $@
 	@echo 
 
 

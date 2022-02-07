@@ -145,13 +145,11 @@ static void bench_isr() __nonbanked {
 }
 
 
-static char msxhal_getch();
+static char msxhal_getch() {
 
-inline static void msxhal_getch_placeholder() {
 
 #ifdef MSX
 	__asm
-	_msxhal_getch::
 		call #0x009C      ; call CHSNS
 		ld l,#0
         di
@@ -161,9 +159,11 @@ inline static void msxhal_getch_placeholder() {
         di
 		ret
 	__endasm;	
-#endif
-	return;
+#endif	
+	
+	return 0;
 }
+
 
 
 char text_tmp[10];
@@ -233,7 +233,7 @@ static enum { SORT_SIZE, SORT_SPEED } selected_sort;
 
 static uint8_t sort_line_order[192];
 static uint8_t sort_line_order_idx[192];
-static uint8_t tmp_line[64];
+static uint8_t tmp_line[32];
 
 static void sort_tests(const T_TEST *t) {
 
@@ -313,27 +313,35 @@ static void sort_tests(const T_TEST *t) {
 				
 				uint8_t li = sort_line_order[i-1];
 				uint8_t lii = sort_line_order_idx[i-1];
-				readLine( tmp_line, i-1 );
+				readLine( &tmp_line[0], i-1 );
 				
 				uint8_t j = i;
 				while (li>sort_line_order[j]) {
 
-					push_bar_up(j - 1, sort_line_order_idx[j-1] & 0x80);
+					push_bar_up(j - 1, sort_line_order_idx[j] & 0x80);
 					
 					for (uint8_t k = 0; k < 13; k++) {
 					
 						sort_line_order[j-1] = sort_line_order[j];
 						sort_line_order_idx[j-1] = sort_line_order_idx[j];
 						j++;
-					}
-					
-//					copyLine(j-1, j);
-//					draw_color_bar( j-1, sort_line_order_idx[j-1] );
+					}					
+				}
+
+				if (0) while (li>sort_line_order[j]) {
+
+					sort_line_order[j-1] = sort_line_order[j];
+					sort_line_order_idx[j-1] = sort_line_order_idx[j];
+
+					copyLine(j-1, j);
+					draw_color_bar( j-1, sort_line_order_idx[j-1] );
+
+					j++;
 				}
 				
 				sort_line_order[j-1] = li;
 				sort_line_order_idx[j-1] = lii;
-				writeLine( tmp_line, j-1 );
+				writeLine( &tmp_line[0], j-1 );
 				draw_color_bar( j-1, lii );
 				
 				i = j-1;
@@ -444,6 +452,58 @@ static void execute_test(const T_TEST *t, bool first_execution) {
 			r->test_case = &t->test_cases[i];
 		}
 	}
+	
+	uint16_t calibration = 0;
+	{				
+
+		isr_counter = 65533;
+		keyboard_enabled = false;
+
+		EI();			
+		while (isr_counter) {};
+		(* t->fn_run_test)(nullptr);
+		DI();
+
+		progress_bar.x_speed = 16;
+		{
+			uint16_t steps = 20*16;
+			if (isr_counter==0) isr_counter++;
+			
+			while (steps > isr_counter) {
+				progress_bar.x_speed += 16;
+				steps -= isr_counter;
+			}
+		}
+			
+		rectangle(50, 12, 253, 12 + 11, 0x00, 0x00, FTransparent + BTransparent);
+
+		progress_bar.x = 52;
+		progress_bar.x_sub = (52 << 8);
+		progress_bar.y0 = 12+2;
+		progress_bar.y1 = 12+9;
+		
+
+		EI();			
+		isr_counter = 65533;
+		while (isr_counter) {};
+		
+		for (uint8_t x = 52; x < 252; x+=20) {
+			
+			progress_bar.x_min = x;
+			progress_bar.x_target = x + 20;
+			
+			(* t->fn_run_test)(nullptr);
+		}
+		while (((volatile uint8_t)progress_bar.x) != 252) {};
+		DI();
+
+		calibration = isr_counter;
+
+		progress_bar.x_target = 0;
+		
+		rectangle(50, 12, 253,12 + 12, 0x00, 0x00, FWhite + BTransparent);
+	}
+
 		
 	// Execute names all Tests
 	{
@@ -464,8 +524,7 @@ static void execute_test(const T_TEST *t, bool first_execution) {
 			textProperties.x = 48 - getTextWidth(r->test_case->name);
 			writeText(r->test_case->name);
 			
-			if (!r->executed) {
-				
+			if (!r->executed) {				
 
 				uint8_t old = ML_LOAD_SEGMENT_B(r->test_case->segment);
 				isr_counter = 65533;
@@ -475,11 +534,8 @@ static void execute_test(const T_TEST *t, bool first_execution) {
 				while (isr_counter) {};
 				(* t->fn_run_test)(r->test_case->fn_test);
 				DI();
-
-				keyboard_enabled = true;
-				ML_RESTORE_B(old);
 				
-				progress_bar.x_speed = 0;
+				progress_bar.x_speed = 16;
 				{
 					uint16_t steps = 20*16;
 					if (isr_counter==0) isr_counter++;
@@ -491,9 +547,6 @@ static void execute_test(const T_TEST *t, bool first_execution) {
 				}
 				
 				r->verified = (* t->fn_verify)(t, r->test_case);
-			}
-			
-			if (!r->executed) {
 			
 				rectangle(50, r->y, 253,r->y + 11,0xFF,0x00, FWhite + BTransparent);
 
@@ -501,9 +554,6 @@ static void execute_test(const T_TEST *t, bool first_execution) {
 				progress_bar.x_sub = (52 << 8);
 				progress_bar.y0 = r->y+2;
 				progress_bar.y1 = r->y+9;
-				
-
-				uint8_t old = ML_LOAD_SEGMENT_B(r->test_case->segment);
 
 				EI();			
 				isr_counter = 65533;
@@ -519,7 +569,8 @@ static void execute_test(const T_TEST *t, bool first_execution) {
 				while (((volatile uint8_t)progress_bar.x) != 252) {};
 				DI();
 
-				r->frames = isr_counter;
+				r->frames = isr_counter - calibration;
+				//r->frames = isr_counter;
 
 				progress_bar.x_target = 0;
 				
@@ -664,7 +715,6 @@ uint16_t test_irq_speed() {
 
 static void main_int(void) {
 
-
     DI();
     
 	msxhal_enableR800();
@@ -693,7 +743,7 @@ static void main_int(void) {
 	//writeText(itoa(test_irq_speed()));
 	
 	keyboard_enabled = false;
-	execute_test(&test_sieve, true);
+	execute_test(&test_sieve_50k, true);
 	keyboard_enabled = true;
 	
 	//execute_test(&test_sieve, false);
@@ -706,16 +756,18 @@ static void main_int(void) {
 			
 			if (c=='s') {
 				selected_sort = SORT_SIZE;
-				sort_tests(&test_sieve);
+				sort_tests(&test_sieve_50k);
 			}
 
 			if (c=='d') {
 				selected_sort = SORT_SPEED;
-				sort_tests(&test_sieve);
+				sort_tests(&test_sieve_50k);
 			}
 		}
 		wait_frame();
 	}
+
+	
 }
 
 int main(void) __nonbanked {

@@ -5,13 +5,6 @@
 
 
 #[no_mangle]
-pub extern "C" fn suma(a: u8, b: u8) -> u8
-{
-  a + b
-}
-
-
-#[no_mangle]
 pub unsafe extern "C" fn sieve_of_eratosthenes_rust(mut out: *mut u16,
                                                  mut work: *mut u8,
                                                  mut max: u16)
