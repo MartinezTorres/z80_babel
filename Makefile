@@ -10,7 +10,7 @@ all: rom
 
 SED = sed
 
-# C
+# SDCC (for some includes to work, it needs an absolute path)
 SDCC = /home/manel/sdcc-4.1.14
 
 CCZ80 = $(SDCC)/bin/sdcc
