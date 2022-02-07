@@ -3,8 +3,6 @@
 ; crt0 for MSX ROM of 32KB, starting at 0x4000
 ;------------------------------------------------
 
-.globl  _main
-
 .globl  ___ML_CONFIG_RAM_START
 
 .globl  ___ML_CONFIG_INIT_ROM_START
@@ -143,10 +141,13 @@ init:
 .area _GSFINAL
 
 ;   enables interruptions and calls main
-    ei
-    call    _main 
+    ld a, #0xC3
+    ld (#0xFD9F), a
+    ld hl, #isr_trampoline
+    ld (#0xFDA0), hl
+
+    jp main_trampoline
     
-    jp      init
 
 
 ;--------------------------------------------------------
@@ -154,6 +155,32 @@ init:
 ;--------------------------------------------------------
 
     .area   _HOME
+
+main_trampoline:
+	ld	a, (___ML_current_segment_a)
+    push af
+	ld	a, #<(___ML_SEGMENT_A_main)
+	ld	(___ML_current_segment_a), a
+	ld	(___ML_address_a), a
+	call	_start
+	pop	af
+	ld	(___ML_current_segment_a), a
+	ld	(___ML_address_a), a
+    jp      init
+
+
+isr_trampoline:
+
+	ld	a, (___ML_current_segment_a)
+    push af
+	ld	a, #<(___ML_SEGMENT_A_main)
+	ld	(___ML_current_segment_a), a
+	ld	(___ML_address_a), a
+	call	_main_irq
+	pop	af
+	ld	(___ML_current_segment_a), a
+	ld	(___ML_address_a), a
+	ret
     
 ___sdcc_call_hl::
     jp  (hl)

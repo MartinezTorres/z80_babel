@@ -1,81 +1,13 @@
 #define DEBUG
 
 #include <common.h>
-
-ML_REQUEST_D(scroll_bar);
-
-
-
-
 #include <test.h>
-
-typedef struct S_TEST_CASE T_TEST_CASE;
-typedef struct S_TEST T_TEST;
-typedef struct S_TEST_RESULT T_TEST_RESULT;
-
-typedef void (*T_FN)();
-typedef void (*T_FN_CALL_TEST)(T_FN);
-typedef bool (*T_FN_VERIFY_TEST)(const T_TEST *, const T_TEST_CASE *);
-
-
-struct S_TEST_CASE {
-	
-	const char *name;
-
-	const uint8_t segment;
-
-	const T_FN fn_test;
-
-	const T_FN fn_begin, fn_end;
-	
-};
-
-struct S_TEST {
-	
-	const char *name;
-
-	const T_TEST_CASE *test_cases;
-	
-	      T_TEST_RESULT *test_results;
-
-	const uint8_t n_test_cases;
-
-	const T_FN fn_reference;
-
-	const T_FN_VERIFY_TEST fn_verify;
-
-	const T_FN_CALL_TEST fn_run_test;
-
-};
-
-struct S_TEST_RESULT {
-
-	const T_TEST *test;
-	const T_TEST_CASE *test_case;
-	
-	uint8_t y;
-	
-	
-	bool executed;
-	bool verified;
-	
-	uint16_t frames;
-	uint16_t max_frames;
-	
-	uint16_t size;
-	uint16_t max_size;
-
-	uint8_t frames_x;
-	uint8_t frames_x_target;
-	uint8_t frames_x_speed;
-	
-	uint8_t size_x;
-	uint8_t size_x_target;
-	uint8_t size_x_speed;
-};
-
-
 #include <sieve.h>
+#include <tests.h>
+
+
+
+static uint8_t selected_test;
 
 static bool is_irq_50Hz;
 
@@ -97,7 +29,7 @@ static struct  {
 } progress_bar;
 
 
-static void bench_isr() __nonbanked {
+void main_irq() {
 		
 	isr_counter++;
 	
@@ -251,7 +183,7 @@ static void sort_tests(const T_TEST *t) {
 			sorted = true;
 			
 
-			for (uint8_t i=1; i<12; i++) {
+			for (uint8_t i=1; i<t->n_test_cases; i++) {
 				
 				T_TEST_RESULT *r0 = &t->test_results[i-1];
 				T_TEST_RESULT *r1 = &t->test_results[i  ];
@@ -285,7 +217,7 @@ static void sort_tests(const T_TEST *t) {
 		}
 
 		if (y_min != 255) {
-			for (uint8_t i=0; i<12; i++) {
+			for (uint8_t i=0; i<t->n_test_cases; i++) {
 				
 				T_TEST_RESULT *r0 = &t->test_results[i];
 				if (r0->executed == 0) break;
@@ -366,10 +298,10 @@ static void adjust_bars(const T_TEST *t) {
 	bool updated = true;
 	while (updated) {
 		
-		for (uint8_t i=0; i<12; i++) {
+		for (uint8_t i=0; i<t->n_test_cases; i++) {
 			
 			updated = false;
-			for (uint8_t i=0; i<12; i++) {
+			for (uint8_t i=0; i<t->n_test_cases; i++) {
 				
 				T_TEST_RESULT *r = &t->test_results[i];
 				
@@ -416,7 +348,6 @@ static void adjust_bars(const T_TEST *t) {
 	}
 }
 
-
 static void execute_test(const T_TEST *t, bool first_execution) {
 
 	// Clear and Draw rectangle area.
@@ -430,15 +361,28 @@ static void execute_test(const T_TEST *t, bool first_execution) {
 	
 	// Draw graph Title
 	{
-		textProperties.y = 182;
-		textProperties.x = 128 - getTextWidth(t->name) / 2;
 
 		textProperties.font_segment = ML_SEGMENT_D(font_thin);
 		textProperties.font_pts = font_thin_pts;
 		textProperties.font_pos = font_thin_pos;
 		textProperties.font_len = font_thin_len;
 
+		textProperties.y = 182;
+		textProperties.x = 128 - getTextWidth(t->name) / 2;
+
 		writeText(t->name);
+	}
+
+	// Draw Test Index
+	{
+		textProperties.y = 182;
+		textProperties.x = 0;
+
+		writeText(itoa(selected_test+1));
+		writeText(" of ");
+		writeText(itoa(SELECTED_TESTS.N));
+		
+		
 	}
 	
 	(* t->fn_reference)();
@@ -521,7 +465,8 @@ static void execute_test(const T_TEST *t, bool first_execution) {
 			textProperties.font_pos = font_thin_pos;
 			textProperties.font_len = font_thin_len;
 
-			textProperties.x = 48 - getTextWidth(r->test_case->name);
+			//textProperties.x = 48 - getTextWidth(r->test_case->name);
+			textProperties.x = 0;
 			writeText(r->test_case->name);
 			
 			if (!r->executed) {				
@@ -713,18 +658,16 @@ uint16_t test_irq_speed() {
 	return 0;
 }
 
-static void main_int(void) {
 
-    DI();
-    
+
+void start() {
+
 	msxhal_enableR800();
 
 	selected_sort = SORT_SPEED;
 
 	progress_bar.x_target = 0;
-	
-	msxhal_install_isr(bench_isr);
-	
+		
 	is_irq_50Hz = test_irq_speed() > 3000;
 
 	ML_LOAD_MODULE_C(graphics);
@@ -739,40 +682,73 @@ static void main_int(void) {
 	textProperties.x = 6;
 
 	writeText("Z80 Babel: Language benchmarks ");
-
-	//writeText(itoa(test_irq_speed()));
 	
 	keyboard_enabled = false;
-	execute_test(&test_sieve_50k, true);
-	keyboard_enabled = true;
+//	execute_test(&test_sieve_50k, true);
+//	execute_test(&test_sieve_cpp, true);
 	
-	//execute_test(&test_sieve, false);
-	
-	//bench_sieve_of_eratosthenes();
+	selected_test = 0;
+	execute_test(SELECTED_TESTS.tests[selected_test], true);
 
 	while (true) {
-					{
+
+		keyboard_enabled = true;
+		
 		char c = msxhal_getch();
 			
-			if (c=='s') {
-				selected_sort = SORT_SIZE;
-				sort_tests(&test_sieve_50k);
-			}
+		if (c == ' ') {
 
-			if (c=='d') {
+			if (selected_sort == SORT_SIZE) {
+
 				selected_sort = SORT_SPEED;
-				sort_tests(&test_sieve_50k);
+			} else {
+
+				selected_sort = SORT_SIZE;
 			}
+			sort_tests( SELECTED_TESTS.tests[selected_test] );
+			
 		}
+		
+		if (c == 's') {
+
+			selected_sort = SORT_SIZE;
+			sort_tests( SELECTED_TESTS.tests[selected_test] );
+			
+		}
+
+		if (c == 'd') {
+			
+			selected_sort = SORT_SPEED;
+			sort_tests( SELECTED_TESTS.tests[selected_test] );
+		}
+		
+		if (c == 0x1D) { // LEFT
+			
+			if (selected_test) {
+
+				selected_test--;
+			} else {
+
+				selected_test = SELECTED_TESTS.N;
+			}			
+
+			keyboard_enabled = false;
+			execute_test(SELECTED_TESTS.tests[selected_test], true);
+			
+
+		}
+
+		if (c == 0x1C) { // RIGHT
+
+			selected_test++;
+			if (selected_test == SELECTED_TESTS.N) 
+				selected_test = 0;
+				
+			keyboard_enabled = false;
+			execute_test(SELECTED_TESTS.tests[selected_test], true);
+		}
+
 		wait_frame();
 	}
-
-	
 }
-
-int main(void) __nonbanked {
-	
-	ML_EXECUTE_A(main, main_int() );
-}
-
 

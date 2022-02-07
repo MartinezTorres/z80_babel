@@ -7,6 +7,7 @@
 
 #include <graphics/graphics.h>
 ML_REQUEST_C(graphics);
+ML_REQUEST_D(scroll_bar);
 
 extern const uint16_t font_newsgeek_pts[];
 extern const uint16_t font_newsgeek_pos[];

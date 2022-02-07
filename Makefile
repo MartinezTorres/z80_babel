@@ -53,6 +53,7 @@ ZIG_FLAGS = build-obj -fno-stage1 -fLLVM -O ReleaseSmall --cache-dir /tmp/zig-ca
 MEGALINKER = ~/repos/manel/msx/megalinker/megalinker
 
 # OPENMSX
+OPENMSX_PARAM = -command "set speed 1000"
 OPENMSX_BIN = openmsx
 OPENMSX_DEF = $(OPENMSX_BIN)                            $(OPENMSX_PARAM) -carta 
 OPENMSX1    = $(OPENMSX_BIN) -machine Philips_VG_8020   $(OPENMSX_PARAM) -carta 
@@ -101,7 +102,7 @@ OBJ    += $(addprefix tmp/,$(SOURCES_ZIG:.zig=.rel))
 ### COLLECT BENCHMARKS
 
 INCLUDES              += -Ibench
-HEADERS               += $(call rwildcard, bench/, *.h) 
+#HEADERS               += $(call rwildcard, bench/, *.h) 
 
 BENCH_SOURCES_C       += $(call rwildcard, bench/, *.c)
 BENCH_SOURCES_S       += $(call rwildcard, bench/, *.s) 
