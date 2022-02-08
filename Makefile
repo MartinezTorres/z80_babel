@@ -38,7 +38,7 @@ DLANG_FLAGS = -mtriple=avr-unknown-unknown -O -betterC -output-ll
 
 #FORTRAN
 FORTRAN = flang-7
-FORTRAN_FLAGS =  -S -target avr-freestanding-eabi -emit-llvm
+FORTRAN_FLAGS =  -Mextend -S -O3 -emit-llvm
 
 #RUST
 RUST = rustc

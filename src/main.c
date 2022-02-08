@@ -684,8 +684,6 @@ void start() {
 	writeText("Z80 Babel: Language benchmarks ");
 	
 	keyboard_enabled = false;
-//	execute_test(&test_sieve_50k, true);
-//	execute_test(&test_sieve_cpp, true);
 	
 	selected_test = 0;
 	execute_test(SELECTED_TESTS.tests[selected_test], true);
@@ -729,7 +727,7 @@ void start() {
 				selected_test--;
 			} else {
 
-				selected_test = SELECTED_TESTS.N;
+				selected_test = SELECTED_TESTS.N - 1;
 			}			
 
 			keyboard_enabled = false;

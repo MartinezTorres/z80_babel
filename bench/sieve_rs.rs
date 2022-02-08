@@ -5,30 +5,30 @@
 
 
 #[no_mangle]
-pub unsafe extern "C" fn sieve_of_eratosthenes_rust(mut out: *mut u16,
+pub unsafe extern "C" fn sieve_of_eratosthenes_rust(mut primes: *mut u16,
                                                  mut work: *mut u8,
-                                                 mut max: u16)
+                                                 mut work_size: u16)
  -> u16 {
     let mut i: u16 = 0;
-    while i < max {
+    while i < work_size {
         *work.offset(i as isize) = 0;
         i = i.wrapping_add(1)
     }
     
     let mut n_primes: u16 = 1;    
     
-    let mut p: *mut u16 = out;
+    let mut p: *mut u16 = primes;
     *p = 2;
     p = p.offset(1 as isize);
     
     let mut i_0: u16 = 3;
-    while i_0 < max {
+    while i_0 < work_size {
         if !(*work.offset(i_0 as isize) != 0) {
             *p = i_0;
             p = p.offset(1 as isize);
             n_primes = n_primes + 1;
             let mut j: u16 = i_0 + i_0 + i_0;
-            while j < max {
+            while j < work_size {
                 *work.offset(j as isize) = 1;
                 j = j + i_0 + i_0;
             }
