@@ -1,5 +1,7 @@
-#pragma once
 #include <common.h>
+
+#include <sieve.h>
+#include <quicksort.h>
 
 static T_TEST_RESULT test_results_global[12];
 
@@ -177,6 +179,116 @@ static const T_TEST test_sieve_50k_2 = {
 	.fn_run_test = (T_FN_CALL_TEST)run_test_sieve_of_erastosthenes
 };
 
+static const T_TEST_CASE test_cases_sieve_50k_3[] = {
+	
+	{
+		.name = "C v1",
+		.segment = ML_SEGMENT_B(sieve_c_50k),
+		.fn_test = (T_FN)sieve_of_eratosthenes_c_1_50k,
+		.fn_begin = (T_FN)sieve_of_eratosthenes_c_1_50k,
+		.fn_end = sieve_of_eratosthenes_c_1_end_50k
+	},
+
+	{
+		.name = "C++ v1",
+		.segment = ML_SEGMENT_B(sieve_cc_50k),
+		.fn_test = (T_FN)sieve_of_eratosthenes_cc_1_50k,
+		.fn_begin = (T_FN)sieve_of_eratosthenes_cc_1_50k,
+		.fn_end = sieve_of_eratosthenes_cc_1_end_50k
+	},
+
+	{
+		.name = "D v1",
+		.segment = ML_SEGMENT_B(sieve_d_50k),
+		.fn_test = (T_FN)sieve_of_eratosthenes_d_1_50k,
+		.fn_begin = (T_FN)sieve_of_eratosthenes_d_1_50k,
+		.fn_end = sieve_of_eratosthenes_d_1_end_50k
+	},
+	
+	{
+		.name = "ZIG",
+		.segment = ML_SEGMENT_B(sieve_zig_50k),
+		.fn_test = (T_FN)sieve_of_eratosthenes_zig_50k,
+		.fn_begin = (T_FN)sieve_of_eratosthenes_zig_50k,
+		.fn_end = sieve_of_eratosthenes_zig_end_50k
+	},
+	
+	{
+		.name = "RUST",
+		.segment = ML_SEGMENT_B(sieve_rs_50k),
+		.fn_test = (T_FN)sieve_of_eratosthenes_rust_50k,
+		.fn_begin = (T_FN)sieve_of_eratosthenes_rust_50k,
+		.fn_end = sieve_of_eratosthenes_rust_end_50k
+	},
+
+	{
+		.name = "FORTRAN",
+		.segment = ML_SEGMENT_B(sieve_f_50k),
+		.fn_test = (T_FN)sieve_of_eratosthenes_fortran_50k,
+		.fn_begin = (T_FN)sieve_of_eratosthenes_fortran__50k,
+		.fn_end = sieve_of_eratosthenes_fortran_end__50k
+	},
+
+	{
+		.name = "C v1 MDL",
+		.segment = ML_SEGMENT_B(sieve_c_50k_mdl_ro),
+		.fn_test = (T_FN)sieve_of_eratosthenes_c_1_50k_mdl_ro,
+		.fn_begin = (T_FN)sieve_of_eratosthenes_c_1_50k_mdl_ro,
+		.fn_end = sieve_of_eratosthenes_c_1_end_50k_mdl_ro
+	},
+
+	{
+		.name = "C++ v1 MDL",
+		.segment = ML_SEGMENT_B(sieve_cc_50k_mdl_ro),
+		.fn_test = (T_FN)sieve_of_eratosthenes_cc_1_50k_mdl_ro,
+		.fn_begin = (T_FN)sieve_of_eratosthenes_cc_1_50k_mdl_ro,
+		.fn_end = sieve_of_eratosthenes_cc_1_end_50k_mdl_ro
+	},
+
+	{
+		.name = "D v1 MDL",
+		.segment = ML_SEGMENT_B(sieve_d_50k_mdl_ro),
+		.fn_test = (T_FN)sieve_of_eratosthenes_d_1_50k_mdl_ro,
+		.fn_begin = (T_FN)sieve_of_eratosthenes_d_1_50k_mdl_ro,
+		.fn_end = sieve_of_eratosthenes_d_1_end_50k_mdl_ro
+	},
+	
+	{
+		.name = "ZIG MDL",
+		.segment = ML_SEGMENT_B(sieve_zig_50k_mdl_ro),
+		.fn_test = (T_FN)sieve_of_eratosthenes_zig_50k_mdl_ro,
+		.fn_begin = (T_FN)sieve_of_eratosthenes_zig_50k_mdl_ro,
+		.fn_end = sieve_of_eratosthenes_zig_end_50k_mdl_ro
+	},
+	
+	{
+		.name = "RUST MDL",
+		.segment = ML_SEGMENT_B(sieve_rs_50k_mdl_ro),
+		.fn_test = (T_FN)sieve_of_eratosthenes_rust_50k_mdl_ro,
+		.fn_begin = (T_FN)sieve_of_eratosthenes_rust_50k_mdl_ro,
+		.fn_end = sieve_of_eratosthenes_rust_end_50k_mdl_ro
+	},
+
+	{
+		.name = "F. MDL",
+		.segment = ML_SEGMENT_B(sieve_f_50k_mdl_ro),
+		.fn_test = (T_FN)sieve_of_eratosthenes_fortran_50k_mdl_ro,
+		.fn_begin = (T_FN)sieve_of_eratosthenes_fortran__50k_mdl_ro,
+		.fn_end = sieve_of_eratosthenes_fortran_end__50k_mdl_ro
+	},
+};
+
+static const T_TEST test_sieve_50k_3 = {
+	
+	.name = "Sieve of Eratosthenes 50k - 3",
+	.test_cases = test_cases_sieve_50k_3,
+	.test_results = test_results_global,
+	.n_test_cases = 12,
+	.fn_reference = run_reference_sieve_of_erastosthenes,
+	.fn_verify = (T_FN_VERIFY_TEST)verify_sieve_of_erastosthenes,
+	.fn_run_test = (T_FN_CALL_TEST)run_test_sieve_of_erastosthenes
+};
+
 static const T_TEST_CASE test_cases_sieve_1k_1[] = {
 	
 	{
@@ -339,6 +451,116 @@ static const T_TEST test_sieve_1k_2 = {
 	.test_cases = test_cases_sieve_1k_2,
 	.test_results = test_results_global,
 	.n_test_cases = 11,
+	.fn_reference = run_reference_sieve_of_erastosthenes,
+	.fn_verify = (T_FN_VERIFY_TEST)verify_sieve_of_erastosthenes,
+	.fn_run_test = (T_FN_CALL_TEST)run_test_sieve_of_erastosthenes
+};
+
+static const T_TEST_CASE test_cases_sieve_1k_3[] = {
+	
+	{
+		.name = "C v1",
+		.segment = ML_SEGMENT_B(sieve_c_1k),
+		.fn_test = (T_FN)sieve_of_eratosthenes_c_1_1k,
+		.fn_begin = (T_FN)sieve_of_eratosthenes_c_1_1k,
+		.fn_end = sieve_of_eratosthenes_c_1_end_1k
+	},
+
+	{
+		.name = "C++ v1",
+		.segment = ML_SEGMENT_B(sieve_cc_1k),
+		.fn_test = (T_FN)sieve_of_eratosthenes_cc_1_1k,
+		.fn_begin = (T_FN)sieve_of_eratosthenes_cc_1_1k,
+		.fn_end = sieve_of_eratosthenes_cc_1_end_1k
+	},
+
+	{
+		.name = "D v1",
+		.segment = ML_SEGMENT_B(sieve_d_1k),
+		.fn_test = (T_FN)sieve_of_eratosthenes_d_1_1k,
+		.fn_begin = (T_FN)sieve_of_eratosthenes_d_1_1k,
+		.fn_end = sieve_of_eratosthenes_d_1_end_1k
+	},
+	
+	{
+		.name = "ZIG",
+		.segment = ML_SEGMENT_B(sieve_zig_1k),
+		.fn_test = (T_FN)sieve_of_eratosthenes_zig_1k,
+		.fn_begin = (T_FN)sieve_of_eratosthenes_zig_1k,
+		.fn_end = sieve_of_eratosthenes_zig_end_1k
+	},
+	
+	{
+		.name = "RUST",
+		.segment = ML_SEGMENT_B(sieve_rs_1k),
+		.fn_test = (T_FN)sieve_of_eratosthenes_rust_1k,
+		.fn_begin = (T_FN)sieve_of_eratosthenes_rust_1k,
+		.fn_end = sieve_of_eratosthenes_rust_end_1k
+	},
+
+	{
+		.name = "FORTRAN",
+		.segment = ML_SEGMENT_B(sieve_f_1k),
+		.fn_test = (T_FN)sieve_of_eratosthenes_fortran_1k,
+		.fn_begin = (T_FN)sieve_of_eratosthenes_fortran__1k,
+		.fn_end = sieve_of_eratosthenes_fortran_end__1k
+	},
+
+	{
+		.name = "C v1 MDL",
+		.segment = ML_SEGMENT_B(sieve_c_1k_mdl_ro),
+		.fn_test = (T_FN)sieve_of_eratosthenes_c_1_1k_mdl_ro,
+		.fn_begin = (T_FN)sieve_of_eratosthenes_c_1_1k_mdl_ro,
+		.fn_end = sieve_of_eratosthenes_c_1_end_1k_mdl_ro
+	},
+
+	{
+		.name = "C++ v1 MDL",
+		.segment = ML_SEGMENT_B(sieve_cc_1k_mdl_ro),
+		.fn_test = (T_FN)sieve_of_eratosthenes_cc_1_1k_mdl_ro,
+		.fn_begin = (T_FN)sieve_of_eratosthenes_cc_1_1k_mdl_ro,
+		.fn_end = sieve_of_eratosthenes_cc_1_end_1k_mdl_ro
+	},
+
+	{
+		.name = "D v1 MDL",
+		.segment = ML_SEGMENT_B(sieve_d_1k_mdl_ro),
+		.fn_test = (T_FN)sieve_of_eratosthenes_d_1_1k_mdl_ro,
+		.fn_begin = (T_FN)sieve_of_eratosthenes_d_1_1k_mdl_ro,
+		.fn_end = sieve_of_eratosthenes_d_1_end_1k_mdl_ro
+	},
+	
+	{
+		.name = "ZIG MDL",
+		.segment = ML_SEGMENT_B(sieve_zig_1k_mdl_ro),
+		.fn_test = (T_FN)sieve_of_eratosthenes_zig_1k_mdl_ro,
+		.fn_begin = (T_FN)sieve_of_eratosthenes_zig_1k_mdl_ro,
+		.fn_end = sieve_of_eratosthenes_zig_end_1k_mdl_ro
+	},
+	
+	{
+		.name = "RUST MDL",
+		.segment = ML_SEGMENT_B(sieve_rs_1k_mdl_ro),
+		.fn_test = (T_FN)sieve_of_eratosthenes_rust_1k_mdl_ro,
+		.fn_begin = (T_FN)sieve_of_eratosthenes_rust_1k_mdl_ro,
+		.fn_end = sieve_of_eratosthenes_rust_end_1k_mdl_ro
+	},
+
+	{
+		.name = "F. MDL",
+		.segment = ML_SEGMENT_B(sieve_f_1k_mdl_ro),
+		.fn_test = (T_FN)sieve_of_eratosthenes_fortran_1k_mdl_ro,
+		.fn_begin = (T_FN)sieve_of_eratosthenes_fortran__1k_mdl_ro,
+		.fn_end = sieve_of_eratosthenes_fortran_end__1k_mdl_ro
+	},
+};
+
+static const T_TEST test_sieve_1k_3 = {
+	
+	.name = "Sieve of Eratosthenes 1k - 3",
+	.test_cases = test_cases_sieve_1k_3,
+	.test_results = test_results_global,
+	.n_test_cases = 12,
 	.fn_reference = run_reference_sieve_of_erastosthenes,
 	.fn_verify = (T_FN_VERIFY_TEST)verify_sieve_of_erastosthenes,
 	.fn_run_test = (T_FN_CALL_TEST)run_test_sieve_of_erastosthenes
@@ -855,27 +1077,132 @@ static const T_TEST test_sieve_zig = {
 	.fn_run_test = (T_FN_CALL_TEST)run_test_sieve_of_erastosthenes
 };
 
-static const struct {
+
+
+static const T_TEST_CASE test_cases_quicksort_50k_1[] = {
 	
-	const T_TEST *tests[12];
-	
-	const uint8_t N;
-	
-} SELECTED_TESTS = {
-	
-	.tests = {
-		&test_sieve_50k_1,
-		&test_sieve_1k_1,
-		&test_sieve_50k_2,
-		&test_sieve_1k_2,
-		&test_sieve_c_1,
-		&test_sieve_c_3,
-		&test_sieve_cpp_1,
-		&test_sieve_cpp_3,
-		&test_sieve_d_1,
-		&test_sieve_d_3,
-		&test_sieve_rust,
-		&test_sieve_zig,
+	{
+		.name = "C v1",
+		.segment = ML_SEGMENT_B(quicksort_c_50k),
+		.fn_test = (T_FN)quicksort_c_50k,
+		.fn_begin = (T_FN)quicksort_c_50k,
+		.fn_end = quicksort_c_end_50k
 	},
-	.N = 12
+
+	{
+		.name = "C++ v1",
+		.segment = ML_SEGMENT_B(quicksort_cc_50k),
+		.fn_test = (T_FN)quicksort_cc_50k,
+		.fn_begin = (T_FN)quicksort_cc_50k,
+		.fn_end = quicksort_cc_end_50k
+	},
+
+
+	{
+		.name = "C v1 MDL",
+		.segment = ML_SEGMENT_B(quicksort_c_50k_mdl_ro),
+		.fn_test = (T_FN)quicksort_c_50k_mdl_ro,
+		.fn_begin = (T_FN)quicksort_c_50k_mdl_ro,
+		.fn_end = quicksort_c_end_50k_mdl_ro
+	},
+
+	{
+		.name = "C++ v1 MDL",
+		.segment = ML_SEGMENT_B(quicksort_cc_50k_mdl_ro),
+		.fn_test = (T_FN)quicksort_cc_50k_mdl_ro,
+		.fn_begin = (T_FN)quicksort_cc_50k_mdl_ro,
+		.fn_end = quicksort_cc_end_50k_mdl_ro
+	},
+
 };
+
+static const T_TEST test_quicksort_50k_1 = {
+	
+	.name = "Quicksort 50k - 1",
+	.test_cases = test_cases_quicksort_50k_1,
+	.test_results = test_results_global,
+	.n_test_cases = 4,
+	.fn_reference = run_reference_quicksort,
+	.fn_verify = (T_FN_VERIFY_TEST)verify_quicksort,
+	.fn_run_test = (T_FN_CALL_TEST)run_test_quicksort
+};
+
+
+
+static const T_TEST_CASE test_cases_quicksort_1k_1[] = {
+	
+	{
+		.name = "C v1",
+		.segment = ML_SEGMENT_B(quicksort_c_1k),
+		.fn_test = (T_FN)quicksort_c_1k,
+		.fn_begin = (T_FN)quicksort_c_1k,
+		.fn_end = quicksort_c_end_1k
+	},
+
+	{
+		.name = "C++ v1",
+		.segment = ML_SEGMENT_B(quicksort_cc_1k),
+		.fn_test = (T_FN)quicksort_cc_1k,
+		.fn_begin = (T_FN)quicksort_cc_1k,
+		.fn_end = quicksort_cc_end_1k
+	},
+
+
+	{
+		.name = "C v1 MDL",
+		.segment = ML_SEGMENT_B(quicksort_c_1k_mdl_ro),
+		.fn_test = (T_FN)quicksort_c_1k_mdl_ro,
+		.fn_begin = (T_FN)quicksort_c_1k_mdl_ro,
+		.fn_end = quicksort_c_end_1k_mdl_ro
+	},
+
+	{
+		.name = "C++ v1 MDL",
+		.segment = ML_SEGMENT_B(quicksort_cc_1k_mdl_ro),
+		.fn_test = (T_FN)quicksort_cc_1k_mdl_ro,
+		.fn_begin = (T_FN)quicksort_cc_1k_mdl_ro,
+		.fn_end = quicksort_cc_end_1k_mdl_ro
+	},
+
+};
+
+static const T_TEST test_quicksort_1k_1 = {
+	
+	.name = "Quicksort 1k - 1",
+	.test_cases = test_cases_quicksort_1k_1,
+	.test_results = test_results_global,
+	.n_test_cases = 4,
+	.fn_reference = run_reference_quicksort,
+	.fn_verify = (T_FN_VERIFY_TEST)verify_quicksort,
+	.fn_run_test = (T_FN_CALL_TEST)run_test_quicksort
+};
+
+
+const uint8_t n_tests = 16;
+const T_TEST *all_tests[] = {
+	&test_quicksort_1k_1,
+	&test_quicksort_50k_1,
+	
+	&test_sieve_1k_1,
+	&test_sieve_50k_1,
+	
+	&test_sieve_50k_2,
+	&test_sieve_1k_2,
+	
+	&test_sieve_50k_3,
+	&test_sieve_1k_3,
+	
+	&test_sieve_c_1,
+	&test_sieve_c_3,
+
+	&test_sieve_cpp_1,
+	&test_sieve_cpp_3,
+
+	&test_sieve_d_1,
+	&test_sieve_d_3,
+
+	&test_sieve_rust,
+
+	&test_sieve_zig,
+};
+

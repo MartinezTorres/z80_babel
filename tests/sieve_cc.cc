@@ -3,7 +3,7 @@
 
 typedef __SIZE_TYPE__ size_t;
 
-#include <algorithm>
+//#include <algorithm>
 
 extern "C" {
 
@@ -38,9 +38,6 @@ uint16_t sieve_of_eratosthenes_cc_1(uint16_t *primes, uint8_t *work, uint16_t wo
         for (uint16_t j = i + i + i; j < work_size; j += i + i)
             work[j] = 1;
     }
-    
-    
-//    std::sort(&primes[0], &primes[10]);
     
     return p-primes;
 }

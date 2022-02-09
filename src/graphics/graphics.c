@@ -72,7 +72,7 @@ T_SA SA;
 
 TTextProperties textProperties;
 
-#ifdef MSX
+#ifdef __SDCC
     // Stack is at 0xfc4a ~ 63K
     static __at ((48+6)*1024U) uint8_t screen_copy_ram[3*32*64];
     #define screen_copy ((uint8_t *)((48+6)*1024U))

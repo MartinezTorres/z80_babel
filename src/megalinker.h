@@ -7,7 +7,6 @@
 // PUBLIC INTERFACE
 //
 
-#define ML_MOVE_SYMBOLS_TO(target_module, source_module) const uint8_t __at 0x0000 __ML_MOVE_SYMBOLS_TO_ ## target_module ## _FROM_ ## source_module 
 
 #define ML_REQUEST_A(module) extern const uint8_t __ML_SEGMENT_A_## module
 #define ML_REQUEST_B(module) extern const uint8_t __ML_SEGMENT_B_## module
@@ -16,12 +15,16 @@
 
 #ifdef __SDCC
 
+	#define ML_MOVE_SYMBOLS_TO(target_module, source_module) const uint8_t __at 0x0000 __ML_MOVE_SYMBOLS_TO_ ## target_module ## _FROM_ ## source_module 
+
 	#define ML_SEGMENT_A(module) ((const uint8_t)&__ML_SEGMENT_A_ ## module)
 	#define ML_SEGMENT_B(module) ((const uint8_t)&__ML_SEGMENT_B_ ## module)
 	#define ML_SEGMENT_C(module) ((const uint8_t)&__ML_SEGMENT_C_ ## module)
 	#define ML_SEGMENT_D(module) ((const uint8_t)&__ML_SEGMENT_D_ ## module)
 
 #else
+
+	#define ML_MOVE_SYMBOLS_TO(target_module, source_module) const uint8_t __ML_MOVE_SYMBOLS_TO_ ## target_module ## _FROM_ ## source_module 
 
 	#define ML_SEGMENT_A(module) ((const uint8_t)0)
 	#define ML_SEGMENT_B(module) ((const uint8_t)0)
