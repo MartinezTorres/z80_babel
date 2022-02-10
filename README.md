@@ -1,5 +1,5 @@
-# z80 Babel: 
-# C, C++, D, Fortran, Rust and Zig for your z80
+# Z80 Babel: 
+# C, C++, D, Fortran, Rust and Zig for your Z80
 
 This is a proof of concept for a multi-language pipeline for the Z80 CPU, 
 and its corresponding test and benchmark tool coded for MSX.
