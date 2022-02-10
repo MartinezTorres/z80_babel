@@ -46,7 +46,7 @@ Here we document the steps needed to compile any of the source languages to Z80 
 
 ### Test and Benchmark Tool
 
-The code in this repository contains a *test and benchmark* program for the only Z80-based platform is it worth to use, the MSX.
+The code in this repository contains a *test and benchmark* program for the only Z80-based platform is it worth using, the MSX.
 This program is meant to test if the aforementioned pipelines **work**, check its competitiveness in terms of **size** and **speed**.
 
 #### Organization
