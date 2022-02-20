@@ -49,10 +49,6 @@ CLANG_FLAGS = -S -emit-llvm -Wall -Wextra -Oz
 DLANG = ldc2 
 DLANG_FLAGS = -mtriple=avr -Oz -betterC  -release -output-ll 
 
-#FORTRAN
-FORTRAN = flang-7
-FORTRAN_FLAGS =  -Mextend -S -Oz -emit-llvm
-
 #RUST
 RUST = rustc
 RUST_FLAGS = --emit=llvm-ir -C opt-level=z -C embed-bitcode=no --target avr-unknown-gnu-atmega328 -Cpanic=abort
@@ -96,7 +92,6 @@ SOURCES_ASM     += $(call rwildcard, src/, *.asm)
 
 SOURCES_CPP     += $(call rwildcard, src/, *.cpp)
 SOURCES_CC      += $(call rwildcard, src/, *.cc)
-SOURCES_FORTRAN += $(call rwildcard, src/, *.f)
 SOURCES_DLANG   += $(call rwildcard, src/, *.d)
 SOURCES_RUST    += $(call rwildcard, src/, *.rs)
 SOURCES_ZIG     += $(call rwildcard, src/, *.zig)
@@ -109,7 +104,6 @@ OBJ    += $(addprefix tmp/,$(SOURCES_ASM:.asm=.rel))
 
 OBJ    += $(addprefix tmp/,$(SOURCES_CPP:.cpp=.rel))
 OBJ    += $(addprefix tmp/,$(SOURCES_CC:.cc=.rel))
-OBJ    += $(addprefix tmp/,$(SOURCES_FORTRAN:.f=.rel))
 OBJ    += $(addprefix tmp/,$(SOURCES_DLANG:.d=.rel))
 OBJ    += $(addprefix tmp/,$(SOURCES_RUST:.rs=.rel))
 OBJ    += $(addprefix tmp/,$(SOURCES_ZIG:.zig=.rel))
@@ -270,16 +264,6 @@ tmp/%_Os.ll tmp/%_Oz.ll tmp/%_O3.ll tmp/%_Ofast.ll tmp/%.ll: %.cpp
 	@$(CLANG_AVR) $(CLANG_FLAGS) $(INCLUDES) $(O) $< -o $@
 	@echo 
 
-
-# FORTRAN
-tmp/%_Os.ll tmp/%_Oz.ll tmp/%_O3.ll tmp/%_Ofast.ll tmp/%.ll: %.f
-	@echo -n $(MSG)
-	@mkdir -p $(@D)
-	@$(eval O := $(shell echo $@ | egrep -o "_O[^\.]*\." | tr -d "_."))
-	@$(eval O := $(if $(O), -$(O), ))
-	@$(FORTRAN) $(FORTRAN_FLAGS) $(O) $< -o $@
-	@echo 
-
 # D
 tmp/%_Os.ll tmp/%_Oz.ll tmp/%_O3.ll tmp/%_Ofast.ll tmp/%.ll: %.d
 	@echo -n $(MSG)
@@ -304,7 +288,7 @@ tmp/%_Os.ll tmp/%_Ofast.ll tmp/%.ll: %.zig
 	@mkdir -p $(@D)
 	@$(eval Os := $(shell echo $@ | egrep -o "_Os\." ))
 	@$(eval Of := $(shell echo $@ | egrep -o "_Ofast\." ))
-	@$(eval O := $(if $(Os), -O ReleaseSmall, ) $(if $(Os), -O ReleaseFast, ))
+	@$(eval O := $(if $(Os), -O ReleaseSmall, ) $(if $(Of), -O ReleaseFast, ))
 	@$(ZIG) $(ZIG_FLAGS) $(O) -femit-llvm-ir=$@ $<
 	@echo 
 
