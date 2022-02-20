@@ -1,4 +1,5 @@
-export fn sieve_of_eratosthenes_zig(primes: [*]u16, work: [*]u8, work_size: u16 ) u16 {
+export fn sieve_of_eratosthenes_zig(primes_out: [*]u16, work: [*]u8, work_size: u16 ) u16 {
+    
     
     {
 		var i: u16 = 0;
@@ -9,11 +10,9 @@ export fn sieve_of_eratosthenes_zig(primes: [*]u16, work: [*]u8, work_size: u16 
 		}
     }
     
-    var n_primes: u16 = 0;
-    
-    primes[n_primes] = 2;
-    n_primes = n_primes + 1;
-    
+    primes_out[0] = 2;
+    var primes = primes_out + 1;
+
     {
 		var i: u16 = 3;
 		while (i < work_size) {
@@ -24,8 +23,8 @@ export fn sieve_of_eratosthenes_zig(primes: [*]u16, work: [*]u8, work_size: u16 
 				continue;
 			}
 
-			primes[n_primes] = i;
-			n_primes = n_primes + 1;
+			primes[0] = i;
+			primes = primes + 1;
 		
 			{
 				var j: u16 = i + i + i;
@@ -41,8 +40,7 @@ export fn sieve_of_eratosthenes_zig(primes: [*]u16, work: [*]u8, work_size: u16 
 		}
     }
     
-    return n_primes;
-    
+    return ((@ptrToInt(primes) - @ptrToInt(primes_out))>>1);
 }
 
 export fn sieve_of_eratosthenes_zig_end() u16 { return 0; }

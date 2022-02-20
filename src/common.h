@@ -6,28 +6,7 @@
 #include <hal/tms99X8.h>
 
 #include <graphics/graphics.h>
-ML_REQUEST_C(graphics);
-ML_REQUEST_D(scroll_bar);
-
-extern const uint16_t font_newsgeek_pts[];
-extern const uint16_t font_newsgeek_pos[];
-extern const uint8_t font_newsgeek_len[];
-ML_REQUEST_D(font_newsgeek);
-
-extern const uint16_t font_didone_pts[];
-extern const uint16_t font_didone_pos[];
-extern const uint8_t font_didone_len[];
-ML_REQUEST_D(font_didone);
-
-extern const uint16_t font_tiny_pts[];
-extern const uint16_t font_tiny_pos[];
-extern const uint8_t font_tiny_len[];
-ML_REQUEST_D(font_tiny);
-
-extern const uint16_t font_thin_pts[];
-extern const uint16_t font_thin_pos[];
-extern const uint8_t font_thin_len[];
-ML_REQUEST_D(font_thin);
+ML_REQUEST_D(tests);
 
 __at ((48+2)*1024U) uint8_t algorithm_work_area[4*1024U];
 
@@ -57,6 +36,7 @@ struct S_TEST_CASE {
 
 	const T_FN fn_begin, fn_end;
 	
+	const uint32_t notes;
 };
 
 struct S_TEST {
@@ -96,56 +76,88 @@ struct S_TEST_RESULT {
 
 	uint8_t frames_x;
 	uint8_t frames_x_target;
-	uint8_t frames_x_speed;
 	
 	uint8_t size_x;
 	uint8_t size_x_target;
-	uint8_t size_x_speed;
 };
 
+extern const char *test_texts[];
 extern const T_TEST *all_tests[];
 extern const uint8_t n_tests;
 
-#define DEF_BENCH(F)  \
-	uint16_t F##_1k (uint16_t *, uint8_t *, uint16_t); void F##_end_1k (); \
-	uint16_t F##_2k (uint16_t *, uint8_t *, uint16_t); void F##_end_2k (); \
-	uint16_t F##_5k (uint16_t *, uint8_t *, uint16_t); void F##_end_5k (); \
-	uint16_t F##_10k(uint16_t *, uint8_t *, uint16_t); void F##_end_10k(); \
-	uint16_t F##_20k(uint16_t *, uint8_t *, uint16_t); void F##_end_20k(); \
-	uint16_t F##_50k(uint16_t *, uint8_t *, uint16_t); void F##_end_50k(); \
-	uint16_t F##_1k_mdl_ro (uint16_t *, uint8_t *, uint16_t); void F##_end_1k_mdl_ro (); \
-	uint16_t F##_2k_mdl_ro (uint16_t *, uint8_t *, uint16_t); void F##_end_2k_mdl_ro (); \
-	uint16_t F##_5k_mdl_ro (uint16_t *, uint8_t *, uint16_t); void F##_end_5k_mdl_ro (); \
-	uint16_t F##_10k_mdl_ro(uint16_t *, uint8_t *, uint16_t); void F##_end_10k_mdl_ro(); \
-	uint16_t F##_20k_mdl_ro(uint16_t *, uint8_t *, uint16_t); void F##_end_20k_mdl_ro(); \
-	uint16_t F##_50k_mdl_ro(uint16_t *, uint8_t *, uint16_t); void F##_end_50k_mdl_ro(); 
+#define DEF_TEST(F) DEF_TEST_COMPILER(F) DEF_TEST_COMPILER(F##_end)
 
-#define DEF_BENCH_FORTRAN(F)  \
+#define DEF_TEST_COMPILER(F)  \
+	DEF_TEST_ARCH(F) 
+
+#define DEF_TEST_ARCH(F)  \
+	DEF_TEST_OPT(F) \
+	DEF_TEST_OPT(F##_z80) \
+	DEF_TEST_OPT(F##_avr) \
+	DEF_TEST_OPT(F##_clang_z80) \
+	DEF_TEST_OPT(F##_clang_avr)
+
+#define DEF_TEST_OPT(F)  \
+	DEF_TEST_ALLOC(F) \
+	DEF_TEST_ALLOC(F##_Ofast) \
+	DEF_TEST_ALLOC(F##_Oz) 
+
+#define DEF_TEST_ALLOC(F)  \
+	DEF_TEST_MDL_RO(F) \
+	DEF_TEST_MDL_RO(F##_1k) \
+	DEF_TEST_MDL_RO(F##_2k) \
+	DEF_TEST_MDL_RO(F##_5k) \
+	DEF_TEST_MDL_RO(F##_10k) \
+	DEF_TEST_MDL_RO(F##_20k) \
+	DEF_TEST_MDL_RO(F##_50k) 
+
+#define DEF_TEST_MDL_RO(F)  \
+	void F(); \
+	void F##_mdl(); \
+	void F##_mdl_alt();
+
+#define DEF_TEST_FORTRAN(F)  \
 	int32_t F##__1k (uint64_t *, uint64_t *, uint64_t *); void F##_end__1k (); \
 	int32_t F##__2k (uint64_t *, uint64_t *, uint64_t *); void F##_end__2k (); \
 	int32_t F##__5k (uint64_t *, uint64_t *, uint64_t *); void F##_end__5k (); \
 	int32_t F##__10k(uint64_t *, uint64_t *, uint64_t *); void F##_end__10k(); \
 	int32_t F##__20k(uint64_t *, uint64_t *, uint64_t *); void F##_end__20k(); \
 	int32_t F##__50k(uint64_t *, uint64_t *, uint64_t *); void F##_end__50k(); \
-	int32_t F##__1k_mdl_ro (uint64_t *, uint64_t *, uint64_t *); void F##_end__1k_mdl_ro (); \
-	int32_t F##__2k_mdl_ro (uint64_t *, uint64_t *, uint64_t *); void F##_end__2k_mdl_ro (); \
-	int32_t F##__5k_mdl_ro (uint64_t *, uint64_t *, uint64_t *); void F##_end__5k_mdl_ro (); \
-	int32_t F##__10k_mdl_ro(uint64_t *, uint64_t *, uint64_t *); void F##_end__10k_mdl_ro(); \
-	int32_t F##__20k_mdl_ro(uint64_t *, uint64_t *, uint64_t *); void F##_end__20k_mdl_ro(); \
-	int32_t F##__50k_mdl_ro(uint64_t *, uint64_t *, uint64_t *); void F##_end__50k_mdl_ro(); 
+	int32_t F##__1k_mdl (uint64_t *, uint64_t *, uint64_t *); void F##_end__1k_mdl (); \
+	int32_t F##__2k_mdl (uint64_t *, uint64_t *, uint64_t *); void F##_end__2k_mdl (); \
+	int32_t F##__5k_mdl (uint64_t *, uint64_t *, uint64_t *); void F##_end__5k_mdl (); \
+	int32_t F##__10k_mdl(uint64_t *, uint64_t *, uint64_t *); void F##_end__10k_mdl(); \
+	int32_t F##__20k_mdl(uint64_t *, uint64_t *, uint64_t *); void F##_end__20k_mdl(); \
+	int32_t F##__50k_mdl(uint64_t *, uint64_t *, uint64_t *); void F##_end__50k_mdl(); 
 
-#define ML_REQUEST_BENCH(module) \
-	extern const uint8_t __ML_SEGMENT_B_## module ## _1k; \
-	extern const uint8_t __ML_SEGMENT_B_## module ## _2k; \
-	extern const uint8_t __ML_SEGMENT_B_## module ## _5k; \
-	extern const uint8_t __ML_SEGMENT_B_## module ## _10k; \
-	extern const uint8_t __ML_SEGMENT_B_## module ## _20k; \
-	extern const uint8_t __ML_SEGMENT_B_## module ## _50k; \
-	extern const uint8_t __ML_SEGMENT_B_## module ## _1k_mdl_ro; \
-	extern const uint8_t __ML_SEGMENT_B_## module ## _2k_mdl_ro; \
-	extern const uint8_t __ML_SEGMENT_B_## module ## _5k_mdl_ro; \
-	extern const uint8_t __ML_SEGMENT_B_## module ## _10k_mdl_ro; \
-	extern const uint8_t __ML_SEGMENT_B_## module ## _20k_mdl_ro; \
-	extern const uint8_t __ML_SEGMENT_B_## module ## _50k_mdl_ro 
+#define ML_REQUEST_TEST(module) ML_REQUEST_TEST_COMPILER(module) extern const uint8_t __ML_SEGMENT_B_## module
+
+#define ML_REQUEST_TEST_COMPILER(module)  \
+	ML_REQUEST_TEST_ARCH(module) 
+
+#define ML_REQUEST_TEST_ARCH(module)  \
+	ML_REQUEST_TEST_OPT(module) \
+	ML_REQUEST_TEST_OPT(module##_z80) \
+	ML_REQUEST_TEST_OPT(module##_avr) \
+	ML_REQUEST_TEST_OPT(module##_clang_z80) \
+	ML_REQUEST_TEST_OPT(module##_clang_avr)
+
+#define ML_REQUEST_TEST_OPT(module)  \
+	ML_REQUEST_TEST_ALLOC(module) \
+	ML_REQUEST_TEST_ALLOC(module##_Ofast) \
+	ML_REQUEST_TEST_ALLOC(module##_Oz) 
+
+#define ML_REQUEST_TEST_ALLOC(module)  \
+	ML_REQUEST_TEST_MDL_RO(module) \
+	ML_REQUEST_TEST_MDL_RO(module##_1k) \
+	ML_REQUEST_TEST_MDL_RO(module##_2k) \
+	ML_REQUEST_TEST_MDL_RO(module##_5k) \
+	ML_REQUEST_TEST_MDL_RO(module##_10k) \
+	ML_REQUEST_TEST_MDL_RO(module##_20k) \
+	ML_REQUEST_TEST_MDL_RO(module##_50k) 
+
+#define ML_REQUEST_TEST_MDL_RO(module)  \
+	extern const uint8_t __ML_SEGMENT_B_## module; \
+	extern const uint8_t __ML_SEGMENT_B_## module ##_mdl; \
+	extern const uint8_t __ML_SEGMENT_B_## module ##_mdl_alt;
 	
-ML_MOVE_SYMBOLS_TO( main, tests );

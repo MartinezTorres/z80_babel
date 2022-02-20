@@ -23,7 +23,8 @@ uint16_t sieve_of_eratosthenes_c_1(uint16_t *primes, uint8_t *work, uint16_t wor
     
     return p-primes;
 }
-void sieve_of_eratosthenes_c_1_end() {}
+
+uint16_t sieve_of_eratosthenes_c_1_end() { return (uint16_t)&sieve_of_eratosthenes_c_1; }
 
 uint16_t sieve_of_eratosthenes_c_2(uint16_t *primes, uint8_t *work, uint16_t work_size ) {
     
@@ -48,7 +49,8 @@ uint16_t sieve_of_eratosthenes_c_2(uint16_t *primes, uint8_t *work, uint16_t wor
     
     return n_primes;
 }
-void sieve_of_eratosthenes_c_2_end() {}
+
+uint16_t sieve_of_eratosthenes_c_2_end() { return (uint16_t)&sieve_of_eratosthenes_c_2; }
 
 
 uint16_t sieve_of_eratosthenes_c_3(uint16_t *primes, uint8_t *work, uint16_t work_size ) {
@@ -73,4 +75,5 @@ uint16_t sieve_of_eratosthenes_c_3(uint16_t *primes, uint8_t *work, uint16_t wor
     
     return n_primes;
 }
-void sieve_of_eratosthenes_c_3_end() {}
+
+uint16_t sieve_of_eratosthenes_c_3_end() { return (uint16_t)&sieve_of_eratosthenes_c_3; }

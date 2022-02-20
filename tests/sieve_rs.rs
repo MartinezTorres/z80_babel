@@ -1,41 +1,44 @@
 #![no_std]
 #![no_main]
-#![allow(dead_code, mutable_transmutes, non_camel_case_types, non_snake_case,
-         non_upper_case_globals, unused_assignments, unused_mut)]
-
 
 #[no_mangle]
-pub unsafe extern "C" fn sieve_of_eratosthenes_rust(mut primes: *mut u16,
-                                                 mut work: *mut u8,
-                                                 mut work_size: u16)
+pub unsafe extern "C" fn sieve_of_eratosthenes_rust(primes: *mut u16,
+                                                 work: *mut u8,
+                                                 work_size: u16)
  -> u16 {
-    let mut i: u16 = 0;
-    while i < work_size {
-        *work.offset(i as isize) = 0;
-        i = i.wrapping_add(1)
+     
+    {
+        let mut i: u16 = 0;
+        while i < work_size {
+            *work.offset(i as isize) = 0;
+            i = i.wrapping_add(1)
+        }
     }
-    
-    let mut n_primes: u16 = 1;    
     
     let mut p: *mut u16 = primes;
     *p = 2;
-    p = p.offset(1 as isize);
-    
-    let mut i_0: u16 = 3;
-    while i_0 < work_size {
-        if !(*work.offset(i_0 as isize) != 0) {
-            *p = i_0;
-            p = p.offset(1 as isize);
-            n_primes = n_primes + 1;
-            let mut j: u16 = i_0 + i_0 + i_0;
-            while j < work_size {
-                *work.offset(j as isize) = 1;
-                j = j + i_0 + i_0;
+    p = p.offset(1);
+
+    {
+        let mut i: u16 = 3;
+        while i < work_size {
+            
+            if !(*work.offset(i as isize) != 0) {
+
+                *p = i;
+                p = p.offset(1);
+                
+                let mut j: u16 = i + i + i;
+                while j < work_size {
+                    
+                    *work.offset(j as isize) = 1;
+                    j = j + i + i;
+                }
             }
+            i = i + 2
         }
-        i_0 = i_0 + 2
     }
-    return n_primes;
+    return ((p as u16) - (primes as u16))>>1;
 }
 
 #[no_mangle]

@@ -15,11 +15,10 @@ SED = sed
 SDCC = ext/sdcc-4.1.14
 
 CCZ80 = $(SDCC)/bin/sdcc
-MAX_ALLOCS = 2000
 
 CCZ80FLAGS = --std-sdcc11 -mz80 --out-fmt-ihx
-CCZ80FLAGS += --disable-warning 110 --disable-warning 126 
-CCZ80FLAGS += --max-allocs-per-node $(MAX_ALLOCS) --allow-unsafe-read --opt-code-speed 
+CCZ80FLAGS += --disable-warning 110 --disable-warning 126 --disable-warning 84 
+CCZ80FLAGS += --max-allocs-per-node 2000 --allow-unsafe-read --opt-code-speed 
 CCZ80FLAGS += --no-std-crt0 --nostdlib --no-xinit-opt
 CCZ80FLAGS += -I$(SDCC)/device/include
 CCZ80FLAGS += -D__HIDDEN__= -D__attribute__\(a\)= 
@@ -31,27 +30,32 @@ ASM_FLAGS = -ogslp
 
 # MDL
 MDL = ext/mdl.jar
-MDL_FLAGS = -dialect sdcc -ro -po speed -ro -po speed -ro -asm-dialect
+MDL_FLAGS = -dialect sdcc -ro -po speed -asm-dialect
+
+MDL_ALT = ext/mdl_v2.4dev.jar
+MDL_ALT_FLAGS = -dialect sdcc -ro -po speed -asm-dialect
 
 #LLVM_C BACKEND
 LLVM_CBE = ext/llvm-cbe/build/tools/llvm-cbe/llvm-cbe 
 LLVM_CBE_FLAGS = --cbe-declare-locals-late
 
 #CLANG
-CLANG = clang
-CLANG_FLAGS = -S -emit-llvm -Os -target avr -Wno-avr-rtlib-linking-quirks -Wall -Wextra 
+CLANG_AVR = clang -target avr -Wno-avr-rtlib-linking-quirks -I ext/CEdev/include
+CLANG_Z80 = ext/CEdev/bin/ez80-clang -I ext/CEdev/include -target z80
+CLANG_FLAGS = -S -emit-llvm -Wall -Wextra -Oz
+
 
 #DLANG
-DLANG = ldmd2 
-DLANG_FLAGS = -mtriple=avr-unknown-unknown -O -betterC -output-ll 
+DLANG = ldc2 
+DLANG_FLAGS = -mtriple=avr -Oz -betterC  -release -output-ll 
 
 #FORTRAN
 FORTRAN = flang-7
-FORTRAN_FLAGS =  -Mextend -S -O3 -emit-llvm
+FORTRAN_FLAGS =  -Mextend -S -Oz -emit-llvm
 
 #RUST
 RUST = rustc
-RUST_FLAGS = --emit=llvm-ir -C opt-level=3 -C embed-bitcode=no --target avr-unknown-gnu-atmega328 -Cpanic=abort
+RUST_FLAGS = --emit=llvm-ir -C opt-level=z -C embed-bitcode=no --target avr-unknown-gnu-atmega328 -Cpanic=abort
 RUST_FLAGS += -L dependency=ext/rust_deps 
 RUST_FLAGS += --extern 'noprelude:compiler_builtins=ext/rust_deps/libcompiler_builtins-4b0354a1ee99278a.rlib' 
 RUST_FLAGS += --extern 'noprelude:core=ext/rust_deps/libcore-c1e4c798d948b121.rlib' 
@@ -83,7 +87,7 @@ MSG = "\033[1;32m[$(@)]\033[1;31m\033[0m"
 #recursive wildcard
 rwildcard=$(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2) $(filter $(subst *,%,$2),$d))
 
-INCLUDES        += -Iinc -Isrc
+INCLUDES        += -Iinc -Isrc -I.
 HEADERS         += $(call rwildcard, src/ inc/, *.h) 
 
 SOURCES_C       += $(call rwildcard, src/, *.c)
@@ -127,18 +131,46 @@ TESTS_SOURCES_DLANG   += $(call rwildcard, tests/, *.d)
 TESTS_SOURCES_RUST    += $(call rwildcard, tests/, *.rs)
 TESTS_SOURCES_ZIG     += $(call rwildcard, tests/, *.zig)
 
-ALLOCS := 1k 2k 5k 10k 20k 50k 1k.mdl.ro 2k.mdl.ro 5k.mdl.ro 10k.mdl.ro 20k.mdl.ro 50k.mdl.ro
 
-OBJ    += $(foreach ALLOC, $(ALLOCS), $(addprefix tmp/,$(TESTS_SOURCES_C:.c=.$(ALLOC).rel)))
-OBJ    += $(foreach ALLOC, $(ALLOCS), $(addprefix tmp/,$(TESTS_SOURCES_S:.s=.$(ALLOC).rel)))
-OBJ    += $(foreach ALLOC, $(ALLOCS), $(addprefix tmp/,$(TESTS_SOURCES_ASM:.asm=.$(ALLOC).rel)))
+MAX_ALLOCS := 1k 2k 5k 10k 20k 50k 
 
-OBJ    += $(foreach ALLOC, $(ALLOCS), $(addprefix tmp/,$(TESTS_SOURCES_CPP:.cpp=.$(ALLOC).rel)))
-OBJ    += $(foreach ALLOC, $(ALLOCS), $(addprefix tmp/,$(TESTS_SOURCES_CC:.cc=.$(ALLOC).rel)))
-OBJ    += $(foreach ALLOC, $(ALLOCS), $(addprefix tmp/,$(TESTS_SOURCES_FORTRAN:.f=.$(ALLOC).rel)))
-OBJ    += $(foreach ALLOC, $(ALLOCS), $(addprefix tmp/,$(TESTS_SOURCES_DLANG:.d=.$(ALLOC).rel)))
-OBJ    += $(foreach ALLOC, $(ALLOCS), $(addprefix tmp/,$(TESTS_SOURCES_RUST:.rs=.$(ALLOC).rel)))
-OBJ    += $(foreach ALLOC, $(ALLOCS), $(addprefix tmp/,$(TESTS_SOURCES_ZIG:.zig=.$(ALLOC).rel)))
+A_EXT  := $(MAX_ALLOCS)
+A_EXT += 1k.mdl 2k.mdl 5k.mdl 10k.mdl 20k.mdl 50k.mdl
+A_EXT += 1k.mdl.alt 2k.mdl.alt 5k.mdl.alt 10k.mdl.alt 20k.mdl.alt 50k.mdl.alt
+
+
+OBJ    += $(foreach A, $(A_EXT), $(addprefix tmp/,$(TESTS_SOURCES_C:.c=.$(A).rel)))
+
+OBJ    += $(foreach A, $(A_EXT), $(addprefix tmp/,$(TESTS_SOURCES_C:.c=.clang.avr.O3.$(A).rel)))
+OBJ    += $(foreach A, $(A_EXT), $(addprefix tmp/,$(TESTS_SOURCES_C:.c=.clang.avr.Os.$(A).rel)))
+OBJ    += $(foreach A, $(A_EXT), $(addprefix tmp/,$(TESTS_SOURCES_C:.c=.clang.avr.Oz.$(A).rel)))
+OBJ    += $(foreach A, $(A_EXT), $(addprefix tmp/,$(TESTS_SOURCES_C:.c=.clang.avr.Ofast.$(A).rel)))
+
+OBJ    += $(foreach A, $(A_EXT), $(addprefix tmp/,$(TESTS_SOURCES_C:.c=.clang.z80.O3.$(A).rel)))
+OBJ    += $(foreach A, $(A_EXT), $(addprefix tmp/,$(TESTS_SOURCES_C:.c=.clang.z80.Os.$(A).rel)))
+OBJ    += $(foreach A, $(A_EXT), $(addprefix tmp/,$(TESTS_SOURCES_C:.c=.clang.z80.Oz.$(A).rel)))
+OBJ    += $(foreach A, $(A_EXT), $(addprefix tmp/,$(TESTS_SOURCES_C:.c=.clang.z80.Ofast.$(A).rel)))
+
+OBJ    += $(addprefix tmp/,$(TESTS_SOURCES_S:.s=.rel))
+OBJ    += $(addprefix tmp/,$(TESTS_SOURCES_ASM:.asm=.rel))
+
+OBJ    += $(addprefix tmp/,$(TESTS_SOURCES_S:.s=.mdl.rel))
+OBJ    += $(addprefix tmp/,$(TESTS_SOURCES_ASM:.asm=.mdl.rel))
+
+OBJ    += $(addprefix tmp/,$(TESTS_SOURCES_S:.s=.mdl.alt.rel))
+OBJ    += $(addprefix tmp/,$(TESTS_SOURCES_ASM:.asm=.mdl.alt.rel))
+
+OBJ    += $(foreach A, $(A_EXT), $(addprefix tmp/,$(TESTS_SOURCES_CPP:.cpp=.avr.$(A).rel)))
+OBJ    += $(foreach A, $(A_EXT), $(addprefix tmp/,$(TESTS_SOURCES_CPP:.cpp=.z80.$(A).rel)))
+
+OBJ    += $(foreach A, $(A_EXT), $(addprefix tmp/,$(TESTS_SOURCES_CC:.cc=.avr.$(A).rel)))
+OBJ    += $(foreach A, $(A_EXT), $(addprefix tmp/,$(TESTS_SOURCES_CC:.cc=.z80.$(A).rel)))
+
+
+OBJ    += $(foreach A, $(A_EXT), $(addprefix tmp/,$(TESTS_SOURCES_FORTRAN:.f=.$(A).rel)))
+OBJ    += $(foreach A, $(A_EXT), $(addprefix tmp/,$(TESTS_SOURCES_DLANG:.d=.$(A).rel)))
+OBJ    += $(foreach A, $(A_EXT), $(addprefix tmp/,$(TESTS_SOURCES_RUST:.rs=.$(A).rel)))
+OBJ    += $(foreach A, $(A_EXT), $(addprefix tmp/,$(TESTS_SOURCES_ZIG:.zig=.$(A).rel)))
 
 #$(info $$OBJ is [${OBJ}])
 
@@ -149,79 +181,52 @@ tmp/%.rel: %.s $(HEADERS)
 	@mkdir -p $(@D)
 	@$(ASM) $(ASM_FLAGS) $@ $<
 	@echo " "`grep "size" tmp/$*.sym | awk 'strtonum("0x"$$4) {print $$2": "strtonum("0x"$$4)" bytes"}'` 
+	@echo
 
-tmp/%.rel: %.asm $(HEADERS) 
+tmp/%.asm: %.asm $(HEADERS) 
 	@echo -n $(MSG)
 	@mkdir -p $(@D)
-	@$(ASM) $(ASM_FLAGS) $@ $<
-	@echo " "`grep "size" tmp/$*.sym | awk 'strtonum("0x"$$4) {print $$2": "strtonum("0x"$$4)" bytes"}'` 
+	@cp $< $@
+	@echo
 
 ###### SDCC NATIVE: C
 tmp/%.c: %.c $(HEADERS)
 	@echo -n $(MSG)
 	@mkdir -p $(@D)
-	@$(CLANG) $(CLANG_FLAGS) $(INCLUDES) $< -o $@.clang
+	@$(CLANG_Z80) $(CLANG_FLAGS) $(INCLUDES) $< -o $@.clang
 	@cp $< $@
-	@#$(CCZ80) -c $(INCLUDES) $(CCZ80FLAGS) $< -o $@
-	@echo 
-
+	@echo
 
 ###### LLVM COMMON PIPELINE:
 tmp/%.cbe.c: tmp/%.ll
 	@echo -n $(MSG)
 	@mkdir -p $(@D)
+	@$(SED) '/attributes \#/d' -i $<
 	@$(LLVM_CBE) --cbe-declare-locals-late $< -o $@
+	@$(SED) '/__ATTRIBUTE_WEAK__/d' -i $@
 	@echo 
 	
 tmp/%.c: tmp/%.cbe.c
 	@echo -n $(MSG)
 	@mkdir -p $(@D)
 	@$(SED) 's/static __forceinline/inline/g' $< > $@
-	@$(SED) 's/uint8_t\* memset(uint8_t\*, uint32_t, uint16_t);/inline uint8_t\* memset(uint8_t\* dst, uint8_t c, uint16_t sz) {uint8_t \*p = dst; while (sz--) *p++ = c; return dst; }/g' -i $@
+	@$(SED) 's/uint8_t\* memset/inline uint8_t\* memset(uint8_t\* dst, uint8_t c, uint16_t sz) {uint8_t \*p = dst; while (sz--) *p++ = c; return dst; } \/\//g' -i $@
 	@$(SED) '/__noreturn void rust_begin_unwind(struct l_struct_core_KD__KD_panic_KD__KD_PanicInfo\* llvm_cbe_info)/{:a;N;/__builtin_unreachable/{N;N;d};/  }/b;ba}' -i $@
 	@echo 
 
-tmp/%.1k.asm: tmp/%.c 
-	@echo -n $(MSG)
-	@mkdir -p $(@D)
-	@$(eval ALLOCS_TMP := $(shell echo $@ | egrep -o "\.[0-9]*k\." | tr -d ".k")000 )
-	@$(CCZ80) -S $(INCLUDES) $(CCZ80FLAGS) --max-allocs-per-node $(ALLOCS_TMP) $< -o $@
+define SPAWN_ALLOC_TARGETS
+
+tmp/%.$(1).asm: tmp/%.c 
+	@echo -n $$(MSG)
+	@mkdir -p $$(@D)
+	@$$(eval ALLOCS_TMP := $$(shell echo $$@ | egrep -o "\.[0-9]*k\." | tr -d ".k")000 )
+	@$$(CCZ80) -S $$(INCLUDES) $$(CCZ80FLAGS) --max-allocs-per-node $$(ALLOCS_TMP) $$< -o $$@
 	@echo 
 
-tmp/%.2k.asm: tmp/%.c 
-	@echo -n $(MSG)
-	@mkdir -p $(@D)
-	@$(eval ALLOCS_TMP := $(shell echo $@ | egrep -o "\.[0-9]*k\." | tr -d ".k")000 )
-	@$(CCZ80) -S $(INCLUDES) $(CCZ80FLAGS) --max-allocs-per-node $(ALLOCS_TMP) $< -o $@
-	@echo 
+endef
 
-tmp/%.5k.asm: tmp/%.c 
-	@echo -n $(MSG)
-	@mkdir -p $(@D)
-	@$(eval ALLOCS_TMP := $(shell echo $@ | egrep -o "\.[0-9]*k\." | tr -d ".k")000 )
-	@$(CCZ80) -S $(INCLUDES) $(CCZ80FLAGS) --max-allocs-per-node $(ALLOCS_TMP) $< -o $@
-	@echo 
+$(eval $(foreach i,$(MAX_ALLOCS), $(call SPAWN_ALLOC_TARGETS,$(i))))
 
-tmp/%.10k.asm: tmp/%.c 
-	@echo -n $(MSG)
-	@mkdir -p $(@D)
-	@$(eval ALLOCS_TMP := $(shell echo $@ | egrep -o "\.[0-9]*k\." | tr -d ".k")000 )
-	@$(CCZ80) -S $(INCLUDES) $(CCZ80FLAGS) --max-allocs-per-node $(ALLOCS_TMP) $< -o $@
-	@echo 
-
-tmp/%.20k.asm: tmp/%.c 
-	@echo -n $(MSG)
-	@mkdir -p $(@D)
-	@$(eval ALLOCS_TMP := $(shell echo $@ | egrep -o "\.[0-9]*k\." | tr -d ".k")000 )
-	@$(CCZ80) -S $(INCLUDES) $(CCZ80FLAGS) --max-allocs-per-node $(ALLOCS_TMP) $< -o $@
-	@echo 
-
-tmp/%.50k.asm: tmp/%.c 
-	@echo -n $(MSG)
-	@mkdir -p $(@D)
-	@$(eval ALLOCS_TMP := $(shell echo $@ | egrep -o "\.[0-9]*k\." | tr -d ".k")000 )
-	@$(CCZ80) -S $(INCLUDES) $(CCZ80FLAGS) --max-allocs-per-node $(ALLOCS_TMP) $< -o $@
-	@echo 
 
 tmp/%.asm: tmp/%.c 
 	@echo -n $(MSG)
@@ -231,70 +236,179 @@ tmp/%.asm: tmp/%.c
 
 tmp/%.rel: tmp/%.asm
 	@echo -n $(MSG)
-	@mkdir -p $(@D)q
+	@mkdir -p $(@D)
 	@$(ASM) $(ASM_FLAGS) $@ $<
+
+	@$(eval CLANG := $(shell echo $@ | egrep -o "\.clang\."))
+	@$(eval CLANG_SUFFIX := $(if $(CLANG), _clang, ))
+	@#$(SED) '/^M/ s/$$/$(CLANG_SUFFIX)/' -i $@
+	@$(SED) '/^S/ s/ Def/$(CLANG_SUFFIX) Def/' -i $@
+
+	@$(eval AVR := $(shell echo $@ | egrep -o "\.avr\."))
+	@$(eval AVR_SUFFIX := $(if $(AVR), _avr, ))
+	@#$(SED) '/^M/ s/$$/$(AVR_SUFFIX)/' -i $@
+	@$(SED) '/^S/ s/ Def/$(AVR_SUFFIX) Def/' -i $@
+
+	@$(eval Z80 := $(shell echo $@ | egrep -o "\.z80\."))
+	@$(eval Z80_SUFFIX := $(if $(Z80), _z80, ))
+	@#$(SED) '/^M/ s/$$/$(Z80_SUFFIX)/' -i $@
+	@$(SED) '/^S/ s/ Def/$(Z80_SUFFIX) Def/' -i $@
+
+	@$(eval O := $(shell echo $@ | egrep -o "\.O[^\.]*\." | tr -d "."))
+	@$(eval O_SUFFIX := $(if $(O), _$(O), ))
+	@#$(SED) '/^M/ s/$$/$(O_SUFFIX)/' -i $@
+	@$(SED) '/^S/ s/ Def/$(O_SUFFIX) Def/' -i $@
 	
 	@$(eval AK := $(shell echo $@ | egrep -o "\.[0-9]*k\." | tr -d ".k"))
 	@$(eval A_SUFFIX := $(if $(AK), _$(AK)k, ))
 	@$(SED) '/^M/ s/$$/$(A_SUFFIX)/' -i $@
 	@$(SED) '/^S/ s/ Def/$(A_SUFFIX) Def/' -i $@
 
-	@$(eval MDL_RO := $(shell echo $@ | egrep -o "\.mdl.ro\."))
-	@$(eval MDL_RO_SUFFIX := $(if $(MDL_RO), _mdl_ro, ))
-	@$(SED) '/^M/ s/$$/$(MDL_RO_SUFFIX)/' -i $@
-	@$(SED) '/^S/ s/ Def/$(MDL_RO_SUFFIX) Def/' -i $@
+	@$(eval MDLF := $(shell echo $@ | egrep -o "\.mdl\."))
+	@$(eval MDLF_SUFFIX := $(if $(MDLF), _mdl, ))
+	@$(SED) '/^M/ s/$$/$(MDLF_SUFFIX)/' -i $@
+	@$(SED) '/^S/ s/ Def/$(MDLF_SUFFIX) Def/' -i $@
+
+	@$(eval MDL_ALT_F := $(shell echo $@ | egrep -o "\.mdl\.alt\."))
+	@$(eval MDL_ALT_SUFFIX := $(if $(MDL_ALT_F), _alt, ))
+	@$(SED) '/^M/ s/$$/$(MDL_ALT_SUFFIX)/' -i $@
+	@$(SED) '/^S/ s/ Def/$(MDL_ALT_SUFFIX) Def/' -i $@
 
 	@echo " "`grep "size" tmp/$*.sym | awk 'strtonum("0x"$$4) {print $$2": "strtonum("0x"$$4)" bytes"}'` 
 
-tmp/%.mdl.ro.asm: tmp/%.asm 
+tmp/%.rel: tmp/%.s
+	@echo -n $(MSG)
+	@mkdir -p $(@D)
+	@$(ASM) $(ASM_FLAGS) $@ $<
+	@echo " "`grep "size" tmp/$*.sym | awk 'strtonum("0x"$$4) {print $$2": "strtonum("0x"$$4)" bytes"}'` 
+
+tmp/%.mdl.asm: tmp/%.asm 
 	@echo -n $(MSG) " "
 	@echo `java -jar $(MDL) $< $(MDL_FLAGS) $@ | grep summary | cut -f 1 -d. | cut -f 3 -d:`
 
+tmp/%.mdl.alt.asm: tmp/%.asm 
+	@echo -n $(MSG) " "
+	@echo `java -jar $(MDL_ALT) $< $(MDL_ALT_FLAGS) $@ | grep summary | cut -f 1 -d. | cut -f 3 -d:`
+
+
 ###### LLVM FRONTENDS:
 
-# CPP
-tmp/%.ll: %.cpp $(HEADERS) 
+# C
+tmp/%.clang.avr.Os.ll: %.c
 	@echo -n $(MSG)
 	@mkdir -p $(@D)
-	@$(CLANG) $(CLANG_FLAGS) $< -o $@
+	@$(CLANG_AVR) $(CLANG_FLAGS) -Os $< -o $@
 	@echo 
 
-tmp/%.ll: %.cc $(HEADERS) 
+tmp/%.clang.avr.Oz.ll: %.c  
 	@echo -n $(MSG)
 	@mkdir -p $(@D)
-	@$(CLANG) $(CLANG_FLAGS) $< -o $@
+	@$(CLANG_AVR) $(CLANG_FLAGS) -Oz $< -o $@
 	@echo 
+
+tmp/%.clang.avr.O3.ll: %.c 
+	@echo -n $(MSG)
+	@mkdir -p $(@D)
+	@$(CLANG_AVR) $(CLANG_FLAGS) -O3 $< -o $@
+	@echo 
+
+tmp/%.clang.avr.Ofast.ll: %.c
+	@echo -n $(MSG)
+	@mkdir -p $(@D)
+	@$(CLANG_AVR) $(CLANG_FLAGS) -Ofast $< -o $@
+	@echo 
+	
+	
+
+
+tmp/%.clang.z80.Os.ll: %.c
+	@echo -n $(MSG)
+	@mkdir -p $(@D)
+	@$(CLANG_Z80) $(CLANG_FLAGS) -Os $< -o $@
+	@echo 
+
+tmp/%.clang.z80.Oz.ll: %.c 
+	@echo -n $(MSG)
+	@mkdir -p $(@D)
+	@$(CLANG_Z80) $(CLANG_FLAGS) -Oz $< -o $@
+	@echo 
+
+tmp/%.clang.z80.O3.ll: %.c 
+	@echo -n $(MSG)
+	@mkdir -p $(@D)
+	@$(CLANG_Z80) $(CLANG_FLAGS) -O3 $< -o $@
+	@echo 
+
+tmp/%.clang.z80.Ofast.ll: %.c
+	@echo -n $(MSG)
+	@mkdir -p $(@D)
+	@$(CLANG_Z80) $(CLANG_FLAGS) -Ofast $< -o $@
+	@echo 
+
+# CPP
+tmp/%.ll: %.cpp
+	@echo -n $(MSG)
+	@mkdir -p $(@D)
+	@$(CLANG_AVR) $(CLANG_FLAGS) $< -o $@
+	@echo 
+
+tmp/%.avr.ll: %.cpp
+	@echo -n $(MSG)
+	@mkdir -p $(@D)
+	@$(CLANG_AVR) $(CLANG_FLAGS) $< -o $@
+	@echo 
+
+tmp/%.z80.ll: %.cpp
+	@echo -n $(MSG)
+	@mkdir -p $(@D)
+	@$(CLANG_Z80) $(CLANG_FLAGS) $< -o $@
+	@echo 
+
+tmp/%.ll: %.cc
+	@echo -n $(MSG)
+	@mkdir -p $(@D)
+	@$(CLANG_AVR) $(CLANG_FLAGS) $< -o $@
+	@echo 
+
+tmp/%.avr.ll: %.cc
+	@echo -n $(MSG)
+	@mkdir -p $(@D)
+	@$(CLANG_AVR) $(CLANG_FLAGS) $< -o $@
+	@echo 
+
+tmp/%.z80.ll: %.cc
+	@echo -n $(MSG)
+	@mkdir -p $(@D)
+	@$(CLANG_Z80) $(CLANG_FLAGS) $< -o $@
+	@echo 
+
 
 # FORTRAN
-tmp/%.ll: %.f $(HEADERS) 
+tmp/%.ll: %.f
 	@echo -n $(MSG)
 	@mkdir -p $(@D)
 	@$(FORTRAN) $(FORTRAN_FLAGS) $< -o $@
 	@echo 
 
 # D
-tmp/%.ll: %.d $(HEADERS) 
+tmp/%.ll: %.d 
 	@echo -n $(MSG)
 	@mkdir -p $(@D)
 	@$(DLANG) $(DLANG_FLAGS) $< -of $@
 	@echo 
 
 # RUST
-tmp/%.ll: %.rs $(HEADERS) 
+tmp/%.ll: %.rs
 	@echo -n $(MSG)
 	@mkdir -p $(@D)
 	@$(RUST) $(RUST_FLAGS) $< -o $@
 	@echo 
 
 # ZIG
-tmp/%.ll: %.zig $(HEADERS) 
+tmp/%.ll: %.zig
 	@echo -n $(MSG)
 	@mkdir -p $(@D)
 	@$(ZIG) $(ZIG_FLAGS) -femit-llvm-ir=$@ $<
-	
-	@$(SED) '/attributes \#0/d' -i $@
-	@$(SED) '/attributes \#1/d' -i $@
-	
 	@echo 
 
 

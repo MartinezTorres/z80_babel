@@ -17,7 +17,9 @@
 #define offset_x ((const uint16_t *)((16 + 2 * 8)*1024U + 512U))
 #define shift8   ((const uint8_t *)((16 + 2 * 8)*1024U + 1024U))
 
-void copyLine(uint8_t dst, uint8_t src) {
+
+
+static void copyLine_int(uint8_t dst, uint8_t src) {
 
     {
 	uint8_t *psrc = &screen_copy[offset_y[src]];
@@ -43,6 +45,11 @@ void copyLine(uint8_t dst, uint8_t src) {
     }
 }
 
+void copyLine(uint8_t dst, uint8_t src) __nonbanked {
+    
+    ML_EXECUTE_A( scroll_bar, copyLine_int(dst, src); );
+}
+
 		
 static const uint8_t color_bar[] = { 
 	0, FLightRed, FLightRed, FLightRed, FLightRed, FDarkRed,
@@ -54,7 +61,7 @@ static const uint8_t color_shade[] = {
 	0, 0, FDarkBlue, FDarkBlue, FDarkBlue, FDarkBlue,
 	0 };
 
-void draw_color_bar(uint8_t y, uint8_t y_test) {
+static void draw_color_bar_int(uint8_t y, uint8_t y_test) {
 
     uint16_t o = offset_y[y];
     for (uint8_t k=0; k!=48; k+=8) {
@@ -73,6 +80,11 @@ void draw_color_bar(uint8_t y, uint8_t y_test) {
 	
     TMS99X8_setPtr(MODE2_ADDRESS_CT + offset_y[y] + offset_x[96] );
     TMS99X8_write(color_shade[y_test]);
+}
+
+void draw_color_bar(uint8_t y, uint8_t y_test) __nonbanked {
+    
+    ML_EXECUTE_A( scroll_bar, draw_color_bar_int(y, y_test); );
 }
 
 static void draw_color_bar_6_A(uint8_t y) {
@@ -182,7 +194,7 @@ static void push_up_lines_6(uint8_t idx) {
 }
 
 
-void push_bar_up(uint8_t y, uint8_t verified) {
+static void push_bar_up_int(uint8_t y, uint8_t verified) {
 
 	TMS99X8_debugBorder(BDarkGreen);
     
@@ -232,3 +244,10 @@ void push_bar_up(uint8_t y, uint8_t verified) {
 	TMS99X8_debugBorder(0);
 }
 
+
+
+
+void push_bar_up(uint8_t y, uint8_t verified) __nonbanked {
+    
+    ML_EXECUTE_A( scroll_bar, push_bar_up_int(y, verified); );
+}

@@ -27,6 +27,7 @@ void push_bar_up(uint8_t idx, uint8_t verified);
 
 void repaintScreen();
 
+
 typedef struct {
 	uint8_t font_segment;
     const uint16_t *font_pts;
@@ -47,3 +48,41 @@ extern T_SA SA;
 
 uint8_t getTextWidth(const char *str);
 void writeText(const char *str);
+
+ML_REQUEST_C(graphics);
+
+extern const uint16_t font_newsgeek_pts[];
+extern const uint16_t font_newsgeek_pos[];
+extern const uint8_t font_newsgeek_len[];
+ML_REQUEST_D(font_newsgeek);
+
+extern const uint16_t font_didone_pts[];
+extern const uint16_t font_didone_pos[];
+extern const uint8_t font_didone_len[];
+ML_REQUEST_D(font_didone);
+
+extern const uint16_t font_tiny_pts[];
+extern const uint16_t font_tiny_pos[];
+extern const uint8_t font_tiny_len[];
+ML_REQUEST_D(font_tiny);
+
+extern const uint16_t font_thin_pts[];
+extern const uint16_t font_thin_pos[];
+extern const uint8_t font_thin_len[];
+ML_REQUEST_D(font_thin);
+
+inline void select_font_tiny() {
+    
+    textProperties.font_segment = ML_SEGMENT_D(font_tiny);
+    textProperties.font_pts = font_tiny_pts;
+    textProperties.font_pos = font_tiny_pos;
+    textProperties.font_len = font_tiny_len;
+}
+
+inline void select_font_thin() {
+    
+    textProperties.font_segment = ML_SEGMENT_D(font_thin);
+    textProperties.font_pts = font_thin_pts;
+    textProperties.font_pos = font_thin_pos;
+    textProperties.font_len = font_thin_len;    
+}

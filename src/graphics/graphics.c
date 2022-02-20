@@ -345,8 +345,7 @@ static void writeChar(char cr) {
 
 void writeText(const char *str) {
     
-    uint8_t old = ML_LOAD_SEGMENT_D(textProperties.font_segment);
-
+    
     uint8_t orig_x = textProperties.x;
     uint8_t orig_y = textProperties.y;
 
@@ -357,16 +356,21 @@ void writeText(const char *str) {
 	    str++;
 	    continue;
 	}
-	writeChar(*str++);
+	
+	uint8_t c = *str++;
+	
+	uint8_t old = ML_LOAD_SEGMENT_D(textProperties.font_segment);
+	
+	writeChar(c);
+	
+	ML_RESTORE_D(old);
     }
     
-    ML_RESTORE_D(old);
 }
 
 
 uint8_t getTextWidth(const char *str) {
     
-    uint8_t old = ML_LOAD_SEGMENT_D(textProperties.font_segment);
     
     uint8_t textWidth = 0;
     
@@ -377,14 +381,18 @@ uint8_t getTextWidth(const char *str) {
 	}
 
 	uint8_t c = *str++ - 32;
+	
+	uint8_t old = ML_LOAD_SEGMENT_D(textProperties.font_segment);
+	
 	uint8_t len0 = textProperties.font_len[c];
 	uint8_t len  = 0;
 	for (uint8_t i=textProperties.sz; i; i--) { len += (int8_t)len0; }
+
+	ML_RESTORE_D(old);
 	
 	textWidth += len;
     }
     
-    ML_RESTORE_D(old);
     
     return textWidth;
 }

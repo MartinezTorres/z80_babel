@@ -11,12 +11,15 @@ extern "C" {
     uint16_t sieve_of_eratosthenes_cc_2(uint16_t *primes, uint8_t *work, uint16_t work_size );
     uint16_t sieve_of_eratosthenes_cc_3(uint16_t *primes, uint8_t *work, uint16_t work_size );
 
-    void sieve_of_eratosthenes_cc_1_end();
-    void sieve_of_eratosthenes_cc_2_end();
-    void sieve_of_eratosthenes_cc_3_end();
+    uint16_t sieve_of_eratosthenes_cc_1_end();
+    uint16_t sieve_of_eratosthenes_cc_2_end();
+    uint16_t sieve_of_eratosthenes_cc_3_end();
 
+    extern const uint16_t szzz;
 
 };
+
+const uint16_t szzz = 3;
 
 uint16_t sieve_of_eratosthenes_cc_1(uint16_t *primes, uint8_t *work, uint16_t work_size ) {
     
@@ -41,7 +44,8 @@ uint16_t sieve_of_eratosthenes_cc_1(uint16_t *primes, uint8_t *work, uint16_t wo
     
     return p-primes;
 }
-void sieve_of_eratosthenes_cc_1_end() {}
+
+uint16_t sieve_of_eratosthenes_cc_1_end() { return (uint16_t)&sieve_of_eratosthenes_cc_1; }
 
 uint16_t sieve_of_eratosthenes_cc_2(uint16_t *primes, uint8_t *work, uint16_t work_size ) {
     
@@ -66,7 +70,8 @@ uint16_t sieve_of_eratosthenes_cc_2(uint16_t *primes, uint8_t *work, uint16_t wo
     
     return n_primes;
 }
-void sieve_of_eratosthenes_cc_2_end() {}
+
+uint16_t sieve_of_eratosthenes_cc_2_end() { return (uint16_t)&sieve_of_eratosthenes_cc_2; }
 
 
 uint16_t sieve_of_eratosthenes_cc_3(uint16_t *primes, uint8_t *work, uint16_t work_size ) {
@@ -91,4 +96,5 @@ uint16_t sieve_of_eratosthenes_cc_3(uint16_t *primes, uint8_t *work, uint16_t wo
     
     return n_primes;
 }
-void sieve_of_eratosthenes_cc_3_end() {}
+
+uint16_t sieve_of_eratosthenes_cc_3_end() { return (uint16_t)&sieve_of_eratosthenes_cc_3; }

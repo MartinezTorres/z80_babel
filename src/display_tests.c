@@ -8,7 +8,8 @@ static uint8_t sort_line_order[192];
 static uint8_t sort_line_order_idx[192];
 static uint8_t tmp_line[32];
 
-void sort_tests_b(const T_TEST *t) {
+
+static void sort_tests_int(const T_TEST *t) {
 
 
 	{
@@ -122,7 +123,6 @@ void sort_tests_b(const T_TEST *t) {
 		}
 	}
 
-	
 }
 
 static void draw_bar_update(uint8_t x, uint8_t y) {
@@ -134,7 +134,10 @@ static void draw_bar_update(uint8_t x, uint8_t y) {
 	setPointXG(x-1, y+5);	
 }
 
-void adjust_bars_b(const T_TEST *t) {
+
+
+
+static void adjust_bars_int(const T_TEST *t) {
 
 	bool updated = true;
 	while (updated) {
@@ -187,4 +190,17 @@ void adjust_bars_b(const T_TEST *t) {
 		
 		wait_frame();
 	}
+}
+
+
+void sort_tests(const T_TEST *t) __nonbanked {
+
+	ML_EXECUTE_A( display_tests, sort_tests_int(t); );
+}
+
+
+
+void adjust_bars(const T_TEST *t) __nonbanked{
+	
+	ML_EXECUTE_A( display_tests, adjust_bars_int(t); );
 }

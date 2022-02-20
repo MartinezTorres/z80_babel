@@ -157,34 +157,92 @@ static uint8_t calc_150a_b(uint16_t a, uint16_t b) {
 
 
 
-void adjust_bars_b(const T_TEST *t);
+void adjust_bars(const T_TEST *t);
 
-void sort_tests_b(const T_TEST *t);
+void sort_tests(const T_TEST *t);
 
+uint32_t texts_texts_idx[13];
+uint8_t n_foot_notes;
+uint16_t calibration;
 
-
-void adjust_bars(const T_TEST *t) {
-	ML_REQUEST_B(display_tests);
-	uint8_t old = ML_LOAD_MODULE_B(display_tests);
-	adjust_bars_b(t);
-	ML_RESTORE_B(old);
-}
-
-void sort_tests(const T_TEST *t) {
-	ML_REQUEST_B(display_tests);
-	uint8_t old = ML_LOAD_MODULE_B(display_tests);
-	sort_tests_b(t);
-	ML_RESTORE_B(old);
-
-}
-
-static void execute_test(const T_TEST *t, bool first_execution) {
-
-	// Clear and Draw rectangle area.
-	rectangle(0,11,255,191,0x00,0x00, FWhite + BTransparent);
+void draw_foot_notes(const T_TEST *t) {
 	
+	n_foot_notes = 0;
+	
+	for (uint8_t i = 0; i<13; i++) {
+	
+		texts_texts_idx[i] = 0;
+	}
+	
+	
+	for (uint8_t i = 0; i < t->n_test_cases; i++) {
+
+		if (t->test_cases[i].notes == 0) continue;
+		
+		for (uint8_t j = 0; j<13; j++) {
+			
+			if (texts_texts_idx[j] == t->test_cases[i].notes) {
+				
+				break;
+			}
+			
+			if (texts_texts_idx[j] == 0) {
+				
+				texts_texts_idx[j] = t->test_cases[i].notes;
+				n_foot_notes++;
+				break;
+			}
+		}
+	}
+
+
+	rectangle(0,193 - 7 * n_foot_notes,255,191,0x00,0x00, FGray + BTransparent);
+	
+	
+	select_font_tiny();
+
+
+	for (uint8_t i = 0; i < n_foot_notes; i++) {
+
+		textProperties.y = 193 - 7 * n_foot_notes + i * 7;
+		textProperties.x = 0;
+		
+		char msg[4] = "1: ";
+		msg[0] += i;
+		 
+		writeText(msg);
+					
+		uint8_t first = 1;
+		for (uint8_t j = 0; j < 32; j++) {
+			
+			if (texts_texts_idx[i] & (((uint32_t)1) << ((uint32_t)j))) {
+			
+				if (first == 0) {
+					char msg[4] = ", ";
+					writeText(msg);
+				}
+				first = 0;
+				
+				char msg[60];
+				memcpy(msg, test_texts[j], 60);
+				
+				writeText(msg);
+			}
+		}
+	}
+
+}
+
+void draw_title_and_bars(const T_TEST *t) {
+
 	// Draw graph horizontal Axis
-	line(2, 180, 253, 180);
+	line(2, 12, 253, 12);
+	line(2, 14, 253, 14);
+
+	line(2, 178 - 7 * n_foot_notes, 253, 178 - 7 * n_foot_notes);
+
+	line(2, 191 - 7 * n_foot_notes, 253, 191 - 7 * n_foot_notes);
+
 	
 	// Draw graph vertical Axis
 	//line(40, 13, 40, 180);
@@ -197,7 +255,7 @@ static void execute_test(const T_TEST *t, bool first_execution) {
 		textProperties.font_pos = font_thin_pos;
 		textProperties.font_len = font_thin_len;
 
-		textProperties.y = 182;
+		textProperties.y = 179 - 7 * n_foot_notes;
 		textProperties.x = 128 - getTextWidth(t->name) / 2;
 
 		writeText(t->name);
@@ -205,7 +263,7 @@ static void execute_test(const T_TEST *t, bool first_execution) {
 
 	// Draw Test Index
 	{
-		textProperties.y = 182;
+		textProperties.y = 179 - 7 * n_foot_notes;
 		textProperties.x = 0;
 
 		writeText(itoa(selected_test+1));
@@ -213,8 +271,11 @@ static void execute_test(const T_TEST *t, bool first_execution) {
 		writeText(itoa(n_tests));
 		
 		
-	}
-	
+	}	
+}
+
+void init_tests(const T_TEST *t, bool first_execution) {
+
 	(* t->fn_reference)();
 	//uint16_t calibration;
 
@@ -226,234 +287,273 @@ static void execute_test(const T_TEST *t, bool first_execution) {
 			r->test_case = &t->test_cases[i];
 		}
 	}
+}
+
+void run_calibration(const T_TEST *t) {
 	
-	uint16_t calibration = 0;
-	{				
+	calibration = 0;
 
-		isr_counter = 65533;
-		keyboard_enabled = false;
+	isr_counter = 65533;
+	keyboard_enabled = false;
 
-		EI();			
-		while (isr_counter) {};
-		(* t->fn_run_test)(nullptr);
-		DI();
+	EI();			
+	while (isr_counter) {};
+	(* t->fn_run_test)(nullptr);
+	DI();
 
-		progress_bar.x_speed = 16;
-		{
-			uint16_t steps = 20*16;
-			if (isr_counter==0) isr_counter++;
-			
-			while (steps > isr_counter) {
-				progress_bar.x_speed += 16;
-				steps -= isr_counter;
-			}
-		}
-			
-		rectangle(50, 12, 253, 12 + 11, 0x00, 0x00, FTransparent + BTransparent);
-
-		progress_bar.x = 52;
-		progress_bar.x_sub = (52 << 8);
-		progress_bar.y0 = 12+2;
-		progress_bar.y1 = 12+9;
-		
-
-		EI();			
-		isr_counter = 65533;
-		while (isr_counter) {};
-		
-		for (uint8_t x = 52; x < 252; x+=20) {
-			
-			progress_bar.x_min = x;
-			progress_bar.x_target = x + 20;
-			
-			(* t->fn_run_test)(nullptr);
-		}
-		while (((volatile uint8_t)progress_bar.x) != 252) {};
-		DI();
-
-		calibration = isr_counter;
-
-		progress_bar.x_target = 0;
-		
-		rectangle(50, 12, 253,12 + 12, 0x00, 0x00, FWhite + BTransparent);
-	}
-
-		
-	// Execute names all Tests
+	progress_bar.x_speed = 16;
 	{
-		for (uint8_t i = 0; i < t->n_test_cases; i++) {
+		uint16_t steps = 20*16;
+		if (isr_counter==0) isr_counter++;
 		
-			T_TEST_RESULT *r = & t->test_results[i];
+		while (steps > isr_counter) {
+			progress_bar.x_speed += 16;
+			steps -= isr_counter;
+		}
+	}
+		
+	rectangle(50, 24, 253, 24 + 11, 0x00, 0x00, FTransparent + BTransparent);
 
-			r->size = (uint16_t)r->test_case->fn_end - (uint16_t)r->test_case->fn_begin;
+	progress_bar.x = 52;
+	progress_bar.x_sub = (52 << 8);
+	progress_bar.y0 = 24+2;
+	progress_bar.y1 = 24+9;
+	
 
-			r->y = 180 - t->n_test_cases*13 + i * 13;
+	EI();			
+	isr_counter = 65533;
+	while (isr_counter) {};
+	
+	for (uint8_t x = 52; x < 252; x+=20) {
+		
+		progress_bar.x_min = x;
+		progress_bar.x_target = x + 20;
+		
+		(* t->fn_run_test)(nullptr);
+	}
+	while (((volatile uint8_t)progress_bar.x) != 252) {};
+	DI();
 
-			textProperties.y = r->y + 1;
-			textProperties.font_segment = ML_SEGMENT_D(font_thin);
-			textProperties.font_pts = font_thin_pts;
-			textProperties.font_pos = font_thin_pos;
-			textProperties.font_len = font_thin_len;
+	calibration = isr_counter;
 
-			//textProperties.x = 48 - getTextWidth(r->test_case->name);
-			textProperties.x = 0;
-			writeText(r->test_case->name);
+	progress_bar.x_target = 0;
+	
+	rectangle(50, 24, 253,24 + 12, 0x00, 0x00, FWhite + BTransparent);
+}
+
+void draw_test_case_name(T_TEST_RESULT *r) {
+
+	select_font_thin();
+
+	textProperties.x = 0;
+	writeText(r->test_case->name);
+	
+	if (r->test_case->notes) {
+
+		char msg[3] = " 1";
+		
+		for (uint8_t j = 0; j < 12; j++) {
 			
-			if (!r->executed) {				
+			if (r->test_case->notes == texts_texts_idx[j]) {
 
-				uint8_t old = ML_LOAD_SEGMENT_B(r->test_case->segment);
-				isr_counter = 65533;
-				keyboard_enabled = false;
-
-				EI();			
-				while (isr_counter) {};
-				(* t->fn_run_test)(r->test_case->fn_test);
-				DI();
+				select_font_tiny();
 				
-				progress_bar.x_speed = 16;
-				{
-					uint16_t steps = 20*16;
-					if (isr_counter==0) isr_counter++;
-					
-					while (steps > isr_counter) {
-						progress_bar.x_speed += 16;
-						steps -= isr_counter;
-					}
-				}
-				
-				r->verified = (* t->fn_verify)(t, r->test_case);
-			
-				rectangle(50, r->y, 253,r->y + 11,0xFF,0x00, FWhite + BTransparent);
-
-				progress_bar.x = 52;
-				progress_bar.x_sub = (52 << 8);
-				progress_bar.y0 = r->y+2;
-				progress_bar.y1 = r->y+9;
-
-				EI();			
-				isr_counter = 65533;
-				while (isr_counter) {};
-				
-				for (uint8_t x = 52; x < 252; x+=20) {
-					
-					progress_bar.x_min = x;
-					progress_bar.x_target = x + 20;
-					
-					(* t->fn_run_test)(r->test_case->fn_test);
-				}
-				while (((volatile uint8_t)progress_bar.x) != 252) {};
-				DI();
-
-				r->frames = isr_counter - calibration;
-				//r->frames = isr_counter;
-
-				progress_bar.x_target = 0;
-				
-				rectangle(50, r->y, 253,r->y + 12,0x00,0x00, FWhite + BTransparent);
-
-
-				ML_RESTORE_B(old);
-					
+				msg[1] += j;
+				writeText(msg);
+				break;
 			}
-
-			for (uint8_t j=0; j<13; ++j) 
-				draw_color_bar( r->y + j, j + (r->verified?0x80:0x00));
-			
-			//if (!r->executed) 
-			{
-			
-				r->size_x = 103;
-				r->max_size = r->size;
-				if (i==0) {
-				} else if (r->max_size > t->test_results[i-1].max_size) {
-					
-					for (uint8_t j = i; j > 0; j--) {
-						
-						// x_target = 104 + 150 * size / max_size
-						T_TEST_RESULT *r1 = &t->test_results[j-1];
-
-						r1->max_size = r->max_size;
-						
-						r1->size_x_target = 104 + calc_150a_b(r1->size, r->max_size);
-						r1->size_x_speed = 0;
-					}
-				} else {
-					r->max_size = t->test_results[i-1].max_size;
-				}
-				r->size_x_target = 104 + calc_150a_b(r->size, r->max_size);
-				r->size_x_speed = 0;
-
-				r->frames_x = 103;
-				r->max_frames = r->frames;
-				if (i==0) {
-				} else if (r->max_frames > t->test_results[i-1].max_frames) {
-					
-					for (uint8_t j = i; j > 0; j--) {
-
-						// x_target = 104 + 150 * frames / max_frames
-						T_TEST_RESULT *r1 = &t->test_results[j-1];
-
-						r1->max_frames = r->max_frames;
-						
-						r1->frames_x_target = 104 + calc_150a_b(r1->frames, r->max_frames);
-						r1->frames_x_speed = 0;
-					}
-				} else {
-					r->max_frames = t->test_results[i-1].max_frames;
-				}
-				r->frames_x_target = 104 + calc_150a_b(r->frames, r->max_frames);
-				r->frames_x_speed = 0;
-			}
-
-			
-			
-			textProperties.font_segment = ML_SEGMENT_D(font_tiny);
-			textProperties.font_pts = font_tiny_pts;
-			textProperties.font_pos = font_tiny_pos;
-			textProperties.font_len = font_tiny_len;
-			
-			{
-				textProperties.y += 0;
-
-				textProperties.x = 50;
-				writeText("DELAY:");
-
-				uint16_t milliseconds = hzToCentsOfSeconds(r->frames);
-				const char *text = itoa(milliseconds);
-
-				textProperties.x = 50 + 22 + 16 - getTextWidth(text);
-				writeText(text); writeText("ms");
-			}
-
-
-			{
-				textProperties.y += 6;
-
-				textProperties.x = 50+6;
-				writeText("SIZE:");
-				
-				const char *text = itoa(r->size);
-				textProperties.x = 50 + 22 + 16 - getTextWidth(text);
-				writeText(text); writeText("b");
-			}
-
-			r->executed = true;
-			
-			setPointXG(103, r->y+1);
-			setPointXG(103, r->y+2);
-			setPointXG(103, r->y+3);
-			setPointXG(103, r->y+4);
-
-			setPointXG(103, r->y+1+6);
-			setPointXG(103, r->y+2+6);
-			setPointXG(103, r->y+3+6);
-			setPointXG(103, r->y+4+6);
-			
-			adjust_bars(t);
-			sort_tests(t);
 		}
 	}
 	
+}
+
+void execute_test_case(const T_TEST *t, T_TEST_RESULT *r) {
+	
+	if (r->executed) return;				
+
+	uint8_t old = ML_LOAD_SEGMENT_B(r->test_case->segment);
+	isr_counter = 65533;
+	keyboard_enabled = false;
+
+	EI();			
+	while (isr_counter) {};
+	(* t->fn_run_test)(r->test_case->fn_test);
+	DI();
+	
+	progress_bar.x_speed = 16;
+	{
+		uint16_t steps = 20*16;
+		if (isr_counter==0) isr_counter++;
+		
+		while (steps > isr_counter) {
+			progress_bar.x_speed += 16;
+			steps -= isr_counter;
+		}
+	}
+	
+	r->verified = (* t->fn_verify)(t, r->test_case);
+
+	rectangle(50, r->y, 253,r->y + 11,0xFF,0x00, FWhite + BTransparent);
+
+	progress_bar.x = 52;
+	progress_bar.x_sub = (52 << 8);
+	progress_bar.y0 = r->y+2;
+	progress_bar.y1 = r->y+9;
+
+	EI();			
+	isr_counter = 65533;
+	while (isr_counter) {};
+	
+	for (uint8_t x = 52; x < 252; x+=20) {
+		
+		progress_bar.x_min = x;
+		progress_bar.x_target = x + 20;
+		
+		(* t->fn_run_test)(r->test_case->fn_test);
+	}
+	while (((volatile uint8_t)progress_bar.x) != 252) {};
+	DI();
+
+	r->frames = isr_counter - calibration;
+
+	progress_bar.x_target = 0;
+	
+	rectangle(50, r->y, 253,r->y + 12,0x00,0x00, FWhite + BTransparent);
+
+	ML_RESTORE_B(old);
+	
+	r->executed = true;
+}
+
+void color_name_based_on_verification(T_TEST_RESULT *r) {
+
+	for (uint8_t j=0; j<13; ++j) 
+		draw_color_bar( r->y + j, j + (r->verified?0x80:0x00));
+}
+
+void calculate_bars_size(uint8_t i, const T_TEST *t, T_TEST_RESULT *r) {
+		
+	r->size_x = 103;
+	r->max_size = r->size;
+	if (i==0) {
+	} else if (r->max_size > t->test_results[i-1].max_size) {
+		
+		for (uint8_t j = i; j > 0; j--) {
+			
+			// x_target = 104 + 150 * size / max_size
+			T_TEST_RESULT *r1 = &t->test_results[j-1];
+
+			r1->max_size = r->max_size;
+			
+			r1->size_x_target = 104 + calc_150a_b(r1->size, r->max_size);
+		}
+	} else {
+		r->max_size = t->test_results[i-1].max_size;
+	}
+	r->size_x_target = 104 + calc_150a_b(r->size, r->max_size);
+
+
+
+	r->frames_x = 103;
+	r->max_frames = r->frames;
+	if (i==0) {
+	} else if (r->max_frames > t->test_results[i-1].max_frames) {
+		
+		for (uint8_t j = i; j > 0; j--) {
+
+			// x_target = 104 + 150 * frames / max_frames
+			T_TEST_RESULT *r1 = &t->test_results[j-1];
+
+			r1->max_frames = r->max_frames;
+			
+			r1->frames_x_target = 104 + calc_150a_b(r1->frames, r->max_frames);
+		}
+	} else {
+		r->max_frames = t->test_results[i-1].max_frames;
+	}
+	r->frames_x_target = 104 + calc_150a_b(r->frames, r->max_frames);
+	
+}
+
+void draw_test_case_info(T_TEST_RESULT *r) {
+
+	select_font_tiny();
+	
+	{
+		textProperties.y += 0;
+
+		textProperties.x = 50;
+		writeText("DELAY:");
+
+		uint16_t milliseconds = hzToCentsOfSeconds(r->frames);
+		const char *text = itoa(milliseconds);
+
+		textProperties.x = 50 + 22 + 16 - getTextWidth(text);
+		writeText(text); writeText("ms");
+	}
+	
+	{
+
+		textProperties.y += 6;
+
+		textProperties.x = 50+6;
+		writeText("SIZE:");
+		
+		const char *text = itoa(r->size);
+		textProperties.x = 50 + 22 + 16 - getTextWidth(text);
+		writeText(text); writeText("b");
+	}
+
+	setPointXG(103, r->y+1);
+	setPointXG(103, r->y+2);
+	setPointXG(103, r->y+3);
+	setPointXG(103, r->y+4);
+
+	setPointXG(103, r->y+1+6);
+	setPointXG(103, r->y+2+6);
+	setPointXG(103, r->y+3+6);
+	setPointXG(103, r->y+4+6);
+}
+
+static void execute_test(const T_TEST *t, bool first_execution) {
+
+	// Clear and Draw rectangle area.
+	rectangle(0,11,255,191,0x00,0x00, FWhite + BTransparent);
+	
+	draw_foot_notes(t);
+	
+	draw_title_and_bars(t);
+	
+	init_tests( t, first_execution);
+	
+	run_calibration(t); 
+
+	// Execute names all Tests
+
+	for (uint8_t i = 0; i < t->n_test_cases; i++) {
+	
+		T_TEST_RESULT *r = & t->test_results[i];
+
+		r->size = (uint16_t)r->test_case->fn_end - (uint16_t)r->test_case->fn_begin;
+
+		r->y = 176 - t->n_test_cases*13 + i * 13 - 7 * n_foot_notes;
+
+		textProperties.y = r->y + 1;
+
+		draw_test_case_name(r);
+		
+		execute_test_case(t, r);
+
+		color_name_based_on_verification(r);
+		
+		calculate_bars_size(i, t, r);
+		
+		draw_test_case_info(r);
+		
+		adjust_bars(t);
+
+		sort_tests(t);
+	}
 }
 
 uint16_t test_irq_speed() {
@@ -501,7 +601,7 @@ void start() {
 	is_irq_50Hz = test_irq_speed() > 3000;
 
 	ML_LOAD_MODULE_C(graphics);
-	ML_LOAD_MODULE_D(scroll_bar);
+	ML_LOAD_MODULE_D(tests);
 	
 //	int8_t i = 0;
 //	while (true) TMS99X8_debugBorder(i++ & 0xF);

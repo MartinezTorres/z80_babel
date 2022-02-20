@@ -2,13 +2,13 @@
 #include <common.h>
 
 // C
-ML_REQUEST_BENCH(quicksort_c); 
-DEF_BENCH(quicksort_c)
+ML_REQUEST_TEST(quicksort_c); 
+DEF_TEST(quicksort_c)
 
 
 // C++
-ML_REQUEST_BENCH(quicksort_cc); 
-DEF_BENCH(quicksort_cc)
+ML_REQUEST_TEST(quicksort_cc); 
+DEF_TEST(quicksort_cc)
 
 typedef struct {
 	
