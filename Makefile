@@ -59,7 +59,7 @@ RUST_FLAGS += -Z unstable-options
 
 #ZIG
 ZIG = ext/zig-linux-x86_64-0.9.0/zig
-ZIG_FLAGS = build-obj -fno-stage1 -fLLVM -O ReleaseSmall --cache-dir /tmp/zig-cache -target avr-freestanding-eabi  
+ZIG_FLAGS = build-obj -femit-bin=/tmp/zig-tmp -fno-stage1 -fLLVM -O ReleaseSmall --cache-dir /tmp/zig-cache -target avr-freestanding-eabi  
 
 # LINKER
 MEGALINKER = ext/megalinker/megalinker
