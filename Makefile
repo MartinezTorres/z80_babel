@@ -118,61 +118,8 @@ OBJ    += $(addprefix tmp/,$(SOURCES_ZIG:.zig=.rel))
 ### COLLECT TESTSMARKS
 
 INCLUDES              += -Itests
-#HEADERS               += $(call rwildcard, tests/, *.h) 
-
-TESTS_SOURCES_C       += $(call rwildcard, tests/, *.c)
-TESTS_SOURCES_S       += $(call rwildcard, tests/, *.s) 
-TESTS_SOURCES_ASM     += $(call rwildcard, tests/, *.asm) 
-
-TESTS_SOURCES_CPP     += $(call rwildcard, tests/, *.cpp)
-TESTS_SOURCES_CC      += $(call rwildcard, tests/, *.cc)
-TESTS_SOURCES_FORTRAN += $(call rwildcard, tests/, *.f)
-TESTS_SOURCES_DLANG   += $(call rwildcard, tests/, *.d)
-TESTS_SOURCES_RUST    += $(call rwildcard, tests/, *.rs)
-TESTS_SOURCES_ZIG     += $(call rwildcard, tests/, *.zig)
-
-
-MAX_ALLOCS := 1k 2k 5k 10k 20k 50k 
-
-A_EXT  := $(MAX_ALLOCS)
-A_EXT += 1k.mdl 2k.mdl 5k.mdl 10k.mdl 20k.mdl 50k.mdl
-A_EXT += 1k.mdl.alt 2k.mdl.alt 5k.mdl.alt 10k.mdl.alt 20k.mdl.alt 50k.mdl.alt
-
-
-OBJ    += $(foreach A, $(A_EXT), $(addprefix tmp/,$(TESTS_SOURCES_C:.c=.$(A).rel)))
-
-OBJ    += $(foreach A, $(A_EXT), $(addprefix tmp/,$(TESTS_SOURCES_C:.c=.clang.avr.O3.$(A).rel)))
-OBJ    += $(foreach A, $(A_EXT), $(addprefix tmp/,$(TESTS_SOURCES_C:.c=.clang.avr.Os.$(A).rel)))
-OBJ    += $(foreach A, $(A_EXT), $(addprefix tmp/,$(TESTS_SOURCES_C:.c=.clang.avr.Oz.$(A).rel)))
-OBJ    += $(foreach A, $(A_EXT), $(addprefix tmp/,$(TESTS_SOURCES_C:.c=.clang.avr.Ofast.$(A).rel)))
-
-OBJ    += $(foreach A, $(A_EXT), $(addprefix tmp/,$(TESTS_SOURCES_C:.c=.clang.z80.O3.$(A).rel)))
-OBJ    += $(foreach A, $(A_EXT), $(addprefix tmp/,$(TESTS_SOURCES_C:.c=.clang.z80.Os.$(A).rel)))
-OBJ    += $(foreach A, $(A_EXT), $(addprefix tmp/,$(TESTS_SOURCES_C:.c=.clang.z80.Oz.$(A).rel)))
-OBJ    += $(foreach A, $(A_EXT), $(addprefix tmp/,$(TESTS_SOURCES_C:.c=.clang.z80.Ofast.$(A).rel)))
-
-OBJ    += $(addprefix tmp/,$(TESTS_SOURCES_S:.s=.rel))
-OBJ    += $(addprefix tmp/,$(TESTS_SOURCES_ASM:.asm=.rel))
-
-OBJ    += $(addprefix tmp/,$(TESTS_SOURCES_S:.s=.mdl.rel))
-OBJ    += $(addprefix tmp/,$(TESTS_SOURCES_ASM:.asm=.mdl.rel))
-
-OBJ    += $(addprefix tmp/,$(TESTS_SOURCES_S:.s=.mdl.alt.rel))
-OBJ    += $(addprefix tmp/,$(TESTS_SOURCES_ASM:.asm=.mdl.alt.rel))
-
-OBJ    += $(foreach A, $(A_EXT), $(addprefix tmp/,$(TESTS_SOURCES_CPP:.cpp=.avr.$(A).rel)))
-OBJ    += $(foreach A, $(A_EXT), $(addprefix tmp/,$(TESTS_SOURCES_CPP:.cpp=.z80.$(A).rel)))
-
-OBJ    += $(foreach A, $(A_EXT), $(addprefix tmp/,$(TESTS_SOURCES_CC:.cc=.avr.$(A).rel)))
-OBJ    += $(foreach A, $(A_EXT), $(addprefix tmp/,$(TESTS_SOURCES_CC:.cc=.z80.$(A).rel)))
-
-
-OBJ    += $(foreach A, $(A_EXT), $(addprefix tmp/,$(TESTS_SOURCES_FORTRAN:.f=.$(A).rel)))
-OBJ    += $(foreach A, $(A_EXT), $(addprefix tmp/,$(TESTS_SOURCES_DLANG:.d=.$(A).rel)))
-OBJ    += $(foreach A, $(A_EXT), $(addprefix tmp/,$(TESTS_SOURCES_RUST:.rs=.$(A).rel)))
-OBJ    += $(foreach A, $(A_EXT), $(addprefix tmp/,$(TESTS_SOURCES_ZIG:.zig=.$(A).rel)))
-
-#$(info $$OBJ is [${OBJ}])
+OBJ    += $(shell for f in `gcc -DDEPENDENCIES -I. -E -P src/tests.c`; do echo tmp/tests/$$f.rel; done)
+$(info $$OBJ is [${OBJ}])
 
 
 ###### SDCC NATIVE: ASM
@@ -193,7 +140,7 @@ tmp/%.asm: %.asm $(HEADERS)
 tmp/%.c: %.c $(HEADERS)
 	@echo -n $(MSG)
 	@mkdir -p $(@D)
-	@$(CLANG_Z80) $(CLANG_FLAGS) $(INCLUDES) $< -o $@.clang
+	@$(CLANG_AVR) $(CLANG_FLAGS) $(INCLUDES) $< -o $@.clang
 	@cp $< $@
 	@echo
 
@@ -216,15 +163,16 @@ tmp/%.c: tmp/%.cbe.c
 
 define SPAWN_ALLOC_TARGETS
 
-tmp/%.$(1).asm: tmp/%.c 
+tmp/%_$(1).asm: tmp/%.c 
 	@echo -n $$(MSG)
 	@mkdir -p $$(@D)
-	@$$(eval ALLOCS_TMP := $$(shell echo $$@ | egrep -o "\.[0-9]*k\." | tr -d ".k")000 )
+	@$$(eval ALLOCS_TMP := $$(shell echo $$@ | egrep -o "_[0-9]*k\." | tr -d "_.k")000 )
 	@$$(CCZ80) -S $$(INCLUDES) $$(CCZ80FLAGS) --max-allocs-per-node $$(ALLOCS_TMP) $$< -o $$@
 	@echo 
 
 endef
 
+MAX_ALLOCS := 1k 2k 5k 10k 20k 50k 100k 200k 500k 1000k 2000k 5000k
 $(eval $(foreach i,$(MAX_ALLOCS), $(call SPAWN_ALLOC_TARGETS,$(i))))
 
 
@@ -239,37 +187,32 @@ tmp/%.rel: tmp/%.asm
 	@mkdir -p $(@D)
 	@$(ASM) $(ASM_FLAGS) $@ $<
 
-	@$(eval CLANG := $(shell echo $@ | egrep -o "\.clang\."))
-	@$(eval CLANG_SUFFIX := $(if $(CLANG), _clang, ))
-	@#$(SED) '/^M/ s/$$/$(CLANG_SUFFIX)/' -i $@
-	@$(SED) '/^S/ s/ Def/$(CLANG_SUFFIX) Def/' -i $@
-
-	@$(eval AVR := $(shell echo $@ | egrep -o "\.avr\."))
+	@$(eval AVR := $(shell echo $@ | egrep -o "_avr"))
 	@$(eval AVR_SUFFIX := $(if $(AVR), _avr, ))
 	@#$(SED) '/^M/ s/$$/$(AVR_SUFFIX)/' -i $@
 	@$(SED) '/^S/ s/ Def/$(AVR_SUFFIX) Def/' -i $@
 
-	@$(eval Z80 := $(shell echo $@ | egrep -o "\.z80\."))
+	@$(eval Z80 := $(shell echo $@ | egrep -o "_z80"))
 	@$(eval Z80_SUFFIX := $(if $(Z80), _z80, ))
 	@#$(SED) '/^M/ s/$$/$(Z80_SUFFIX)/' -i $@
 	@$(SED) '/^S/ s/ Def/$(Z80_SUFFIX) Def/' -i $@
 
-	@$(eval O := $(shell echo $@ | egrep -o "\.O[^\.]*\." | tr -d "."))
+	@$(eval O := $(shell echo $@ | egrep -o "_O[^_\.]*[\._]" | tr -d "_."))
 	@$(eval O_SUFFIX := $(if $(O), _$(O), ))
 	@#$(SED) '/^M/ s/$$/$(O_SUFFIX)/' -i $@
 	@$(SED) '/^S/ s/ Def/$(O_SUFFIX) Def/' -i $@
 	
-	@$(eval AK := $(shell echo $@ | egrep -o "\.[0-9]*k\." | tr -d ".k"))
+	@$(eval AK := $(shell echo $@ | egrep -o "_[0-9]*k" | tr -d "_.k"))
 	@$(eval A_SUFFIX := $(if $(AK), _$(AK)k, ))
 	@$(SED) '/^M/ s/$$/$(A_SUFFIX)/' -i $@
 	@$(SED) '/^S/ s/ Def/$(A_SUFFIX) Def/' -i $@
 
-	@$(eval MDLF := $(shell echo $@ | egrep -o "\.mdl\."))
+	@$(eval MDLF := $(shell echo $@ | egrep -o "_mdl"))
 	@$(eval MDLF_SUFFIX := $(if $(MDLF), _mdl, ))
 	@$(SED) '/^M/ s/$$/$(MDLF_SUFFIX)/' -i $@
 	@$(SED) '/^S/ s/ Def/$(MDLF_SUFFIX) Def/' -i $@
 
-	@$(eval MDL_ALT_F := $(shell echo $@ | egrep -o "\.mdl\.alt\."))
+	@$(eval MDL_ALT_F := $(shell echo $@ | egrep -o "_mdl_alt"))
 	@$(eval MDL_ALT_SUFFIX := $(if $(MDL_ALT_F), _alt, ))
 	@$(SED) '/^M/ s/$$/$(MDL_ALT_SUFFIX)/' -i $@
 	@$(SED) '/^S/ s/ Def/$(MDL_ALT_SUFFIX) Def/' -i $@
@@ -282,133 +225,87 @@ tmp/%.rel: tmp/%.s
 	@$(ASM) $(ASM_FLAGS) $@ $<
 	@echo " "`grep "size" tmp/$*.sym | awk 'strtonum("0x"$$4) {print $$2": "strtonum("0x"$$4)" bytes"}'` 
 
-tmp/%.mdl.asm: tmp/%.asm 
+tmp/%_mdl.asm: tmp/%.asm 
 	@echo -n $(MSG) " "
-	@echo `java -jar $(MDL) $< $(MDL_FLAGS) $@ | grep summary | cut -f 1 -d. | cut -f 3 -d:`
+	@echo `java -jar $(MDL) $< $(MDL_FLAGS) $@ | grep summary | cut -f 1 -d_ | cut -f 3 -d:`
 
-tmp/%.mdl.alt.asm: tmp/%.asm 
+tmp/%_mdl_alt.asm: tmp/%.asm 
 	@echo -n $(MSG) " "
-	@echo `java -jar $(MDL_ALT) $< $(MDL_ALT_FLAGS) $@ | grep summary | cut -f 1 -d. | cut -f 3 -d:`
+	@echo `java -jar $(MDL_ALT) $< $(MDL_ALT_FLAGS) $@ | grep summary | cut -f 1 -d_ | cut -f 3 -d:`
 
 
 ###### LLVM FRONTENDS:
 
 # C
-tmp/%.clang.avr.Os.ll: %.c
+tmp/%_Os.ll tmp/%_Oz.ll tmp/%_O3.ll tmp/%_Ofast.ll: %.c
 	@echo -n $(MSG)
 	@mkdir -p $(@D)
-	@$(CLANG_AVR) $(CLANG_FLAGS) -Os $< -o $@
+	@$(eval O := $(shell echo $@ | egrep -o "_O[^\.]*\." | tr -d "_."))
+	@$(eval O := $(if $(O), -$(O), ))
+	@$(CLANG_AVR) $(CLANG_FLAGS) $(INCLUDES) $(O) $< -o $@
 	@echo 
 
-tmp/%.clang.avr.Oz.ll: %.c  
+tmp/%_z80_Os.ll tmp/%_z80_Oz.ll tmp/%_z80_O3.ll tmp/%_z80_Ofast.ll: %.c
 	@echo -n $(MSG)
 	@mkdir -p $(@D)
-	@$(CLANG_AVR) $(CLANG_FLAGS) -Oz $< -o $@
-	@echo 
-
-tmp/%.clang.avr.O3.ll: %.c 
-	@echo -n $(MSG)
-	@mkdir -p $(@D)
-	@$(CLANG_AVR) $(CLANG_FLAGS) -O3 $< -o $@
-	@echo 
-
-tmp/%.clang.avr.Ofast.ll: %.c
-	@echo -n $(MSG)
-	@mkdir -p $(@D)
-	@$(CLANG_AVR) $(CLANG_FLAGS) -Ofast $< -o $@
-	@echo 
-	
-	
-
-
-tmp/%.clang.z80.Os.ll: %.c
-	@echo -n $(MSG)
-	@mkdir -p $(@D)
-	@$(CLANG_Z80) $(CLANG_FLAGS) -Os $< -o $@
-	@echo 
-
-tmp/%.clang.z80.Oz.ll: %.c 
-	@echo -n $(MSG)
-	@mkdir -p $(@D)
-	@$(CLANG_Z80) $(CLANG_FLAGS) -Oz $< -o $@
-	@echo 
-
-tmp/%.clang.z80.O3.ll: %.c 
-	@echo -n $(MSG)
-	@mkdir -p $(@D)
-	@$(CLANG_Z80) $(CLANG_FLAGS) -O3 $< -o $@
-	@echo 
-
-tmp/%.clang.z80.Ofast.ll: %.c
-	@echo -n $(MSG)
-	@mkdir -p $(@D)
-	@$(CLANG_Z80) $(CLANG_FLAGS) -Ofast $< -o $@
+	@$(eval O := $(shell echo $@ | egrep -o "_O[^\.]*\." | tr -d "_."))
+	@$(eval O := $(if $(O), -$(O), ))
+	@$(CLANG_Z80) $(CLANG_FLAGS) $(INCLUDES) $(O) $< -o $@
 	@echo 
 
 # CPP
-tmp/%.ll: %.cpp
+tmp/%_Os.ll tmp/%_Oz.ll tmp/%_O3.ll tmp/%_Ofast.ll tmp/%.ll: %.cc
 	@echo -n $(MSG)
 	@mkdir -p $(@D)
-	@$(CLANG_AVR) $(CLANG_FLAGS) $< -o $@
+	@$(eval O := $(shell echo $@ | egrep -o "_O[^\.]*\." | tr -d "_."))
+	@$(eval O := $(if $(O), -$(O), ))
+	@$(CLANG_AVR) $(CLANG_FLAGS) $(INCLUDES) $(O) $< -o $@
 	@echo 
 
-tmp/%.avr.ll: %.cpp
+tmp/%_Os.ll tmp/%_Oz.ll tmp/%_O3.ll tmp/%_Ofast.ll tmp/%.ll: %.cpp
 	@echo -n $(MSG)
 	@mkdir -p $(@D)
-	@$(CLANG_AVR) $(CLANG_FLAGS) $< -o $@
-	@echo 
-
-tmp/%.z80.ll: %.cpp
-	@echo -n $(MSG)
-	@mkdir -p $(@D)
-	@$(CLANG_Z80) $(CLANG_FLAGS) $< -o $@
-	@echo 
-
-tmp/%.ll: %.cc
-	@echo -n $(MSG)
-	@mkdir -p $(@D)
-	@$(CLANG_AVR) $(CLANG_FLAGS) $< -o $@
-	@echo 
-
-tmp/%.avr.ll: %.cc
-	@echo -n $(MSG)
-	@mkdir -p $(@D)
-	@$(CLANG_AVR) $(CLANG_FLAGS) $< -o $@
-	@echo 
-
-tmp/%.z80.ll: %.cc
-	@echo -n $(MSG)
-	@mkdir -p $(@D)
-	@$(CLANG_Z80) $(CLANG_FLAGS) $< -o $@
+	@$(eval O := $(shell echo $@ | egrep -o "_O[^\.]*\." | tr -d "_."))
+	@$(eval O := $(if $(O), -$(O), ))
+	@$(CLANG_AVR) $(CLANG_FLAGS) $(INCLUDES) $(O) $< -o $@
 	@echo 
 
 
 # FORTRAN
-tmp/%.ll: %.f
+tmp/%_Os.ll tmp/%_Oz.ll tmp/%_O3.ll tmp/%_Ofast.ll tmp/%.ll: %.f
 	@echo -n $(MSG)
 	@mkdir -p $(@D)
-	@$(FORTRAN) $(FORTRAN_FLAGS) $< -o $@
+	@$(eval O := $(shell echo $@ | egrep -o "_O[^\.]*\." | tr -d "_."))
+	@$(eval O := $(if $(O), -$(O), ))
+	@$(FORTRAN) $(FORTRAN_FLAGS) $(O) $< -o $@
 	@echo 
 
 # D
-tmp/%.ll: %.d 
+tmp/%_Os.ll tmp/%_Oz.ll tmp/%_O3.ll tmp/%_Ofast.ll tmp/%.ll: %.d
 	@echo -n $(MSG)
 	@mkdir -p $(@D)
-	@$(DLANG) $(DLANG_FLAGS) $< -of $@
+	@$(eval O := $(shell echo $@ | egrep -o "_O[^\.]*\." | tr -d "_."))
+	@$(eval O := $(if $(O), -$(O), ))
+	@$(DLANG) $(DLANG_FLAGS) $(O) $< -of $@
 	@echo 
 
 # RUST
-tmp/%.ll: %.rs
+tmp/%_Os.ll tmp/%_Oz.ll tmp/%_O3.ll tmp/%_Ofast.ll tmp/%.ll: %.rs
 	@echo -n $(MSG)
 	@mkdir -p $(@D)
-	@$(RUST) $(RUST_FLAGS) $< -o $@
+	@$(eval O := $(shell echo $@ | egrep -o "_O[^\.]*\." | tr -d "O_."))
+	@$(eval O := $(if $(O), -C opt-level=$(O), ))
+	@$(RUST) $(RUST_FLAGS) $(O) $< -o $@
 	@echo 
 
 # ZIG
-tmp/%.ll: %.zig
+tmp/%_Os.ll tmp/%_Ofast.ll tmp/%.ll: %.zig
 	@echo -n $(MSG)
 	@mkdir -p $(@D)
-	@$(ZIG) $(ZIG_FLAGS) -femit-llvm-ir=$@ $<
+	@$(eval Os := $(shell echo $@ | egrep -o "_Os\." ))
+	@$(eval Of := $(shell echo $@ | egrep -o "_Ofast\." ))
+	@$(eval O := $(if $(Os), -O ReleaseSmall, ) $(if $(Os), -O ReleaseFast, ))
+	@$(ZIG) $(ZIG_FLAGS) $(O) -femit-llvm-ir=$@ $<
 	@echo 
 
 
