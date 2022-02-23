@@ -1,5 +1,7 @@
 #include <common.h>
 
+ML_MOVE_SYMBOLS_TO(tests, quicksort_common);
+
 typedef struct {
 	
 	uint16_t  array[2048];

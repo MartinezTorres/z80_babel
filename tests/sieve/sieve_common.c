@@ -24,13 +24,13 @@ void run_sieve(T_FN_SIEVE f) {
 		sieve.n_primes = (*f)(sieve.primes, sieve.work_area, 2048);
 }
 
-ML_REQUEST_B(sieve_c_50k_mdl);
-extern void sieve_c_1_50k_mdl();
+ML_REQUEST_B(sieve_c_50k);
+extern void sieve_c_1_50k();
 void reference_sieve() {
 	
-	uint8_t old = ML_LOAD_MODULE_B(sieve_c_50k_mdl);
+	uint8_t old = ML_LOAD_MODULE_B(sieve_c_50k);
 				
-	sieve.n_primes_reference = ((T_FN_SIEVE)sieve_c_1_50k_mdl)(sieve.primes_reference, sieve.work_area, 2048);
+	sieve.n_primes_reference = ((T_FN_SIEVE)sieve_c_1_50k)(sieve.primes_reference, sieve.work_area, 2048);
 	ML_RESTORE_B(old);
 }
 
