@@ -1,11 +1,11 @@
 # Z80 Babel: 
-# C, C++, D, Fortran, Rust and Zig for your Z80
+# C, C++, D, Rust and Zig for your Z80
 
 This is a proof of concept for a multi-language pipeline for the Z80 CPU, 
 and its corresponding test and benchmark tool coded for MSX.
 
-Most surprisingly, it IS possible to use C++, D, Fortran, Rust or Zig to generate Z80 code, 
-and even more surprisingly, these have competitive performance (except for Fortran, but maybe we can live with that). 
+Most surprisingly, it IS possible to use C++, D, Rust or Zig to generate Z80 code, 
+and even more surprisingly, these have competitive performance. 
 Support for their respective standard libraries is somewhat limited (a.k.a inexistent).
 
 ### Compiling to Z80
@@ -18,7 +18,7 @@ This architecture allows LLVM to support a large number of programming languages
 Sadly, Z80 is not yet a natively supported architecture, albeit there are efforts to add Z80 support
 [[1](https://github.com/jacobly0/llvm-project),[2](https://github.com/AHelper/llvm-z80-target)].
 
-C++, Rust, D, Zig and Fortran, among others, have compilers based on the llvm project that can generate *llvm-ir*.
+C++, Rust, D and Zig, among others, have compilers based on the llvm project that can generate *llvm-ir*.
 
 One of the original back-ends for LLVM was the C back-end, that generated C code from any of the sources.
 This back-end became obsolete long ago and its support was abandoned, 
@@ -109,11 +109,6 @@ rustc --emit=llvm-ir -C opt-level=3 -C embed-bitcode=no --target avr-unknown-gnu
 ```
 ext/zig-linux-x86_64-0.9.0/zig build-obj -fno-stage1 -fLLVM -O ReleaseSmall --cache-dir /tmp/zig-cache -target avr-freestanding-eabi -femit-llvm-ir=tmp/tests/sieve_zig.ll tests/sieve_zig.zig
 sed '/attributes \#/d' -i tmp/tests/sieve_zig.ll
-```
-
-### Fortran to LLVM IR
-```
-flang-7 -Mextend -S -O3 -emit-llvm tests/sieve_f.f -o tmp/tests/sieve_f.ll
 ```
 
 ### LLVM IR to Z80 ASM
