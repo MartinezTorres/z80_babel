@@ -77,3 +77,4 @@ uint16_t sieve_c_3(uint16_t *primes, uint8_t *work, uint16_t work_size ) {
 }
 
 uint16_t sieve_c_3_end() { return (uint16_t)&sieve_c_3; }
+

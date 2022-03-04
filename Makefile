@@ -5,6 +5,7 @@ NAME := z80_babel
 
 all: rom 
 
+
 ##########################################################
 ### INFO MESSAGE
 MSG = "\033[1;32m[$(@)]\033[1;31m\033[0m"
@@ -48,7 +49,7 @@ $(MDL):
 	@echo $(MISSING_MSG) Please download a release version of MDL from: https://github.com/santiontanon/mdlz80optimizer && false
 
 MDL_DEV = ext/mdl_v2.4dev.jar
-MDL_DEV_FLAGS = -dialect sdcc -po speed -asm-dialect
+MDL_DEV_FLAGS = -dialect sdcc -ro -po speed -asm-dialect
 
 $(MDL_DEV):
 	@echo $(MISSING_MSG) Please download a development version of MDL from: https://github.com/santiontanon/mdlz80optimizer && false
@@ -160,6 +161,8 @@ OBJ    += $(addprefix tmp/,$(SOURCES_ZIG:.zig=.rel))
 INCLUDES              += -Itests
 OBJ    += $(shell for f in `gcc -DDEPENDENCIES -I. -E -P src/tests.c`; do echo tmp/tests/$$f.rel; done)
 #$(info $$OBJ is [${OBJ}])
+
+all: $(OBJ)
 
 
 ###### SDCC NATIVE: ASM

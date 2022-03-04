@@ -224,7 +224,7 @@ static uint32_t rotateLeft(uint32_t x, uint32_t n){
 	return (x << n) | (x >> (32 - n));
 }
 
-void md5_c_end() {}
+uint16_t md5_c_end() {return(uint16_t)&md5_c;}
 
 
 
