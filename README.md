@@ -133,11 +133,10 @@ ext/sdcc-4.1.14/bin/sdcc -S -Iinc -Isrc -Itests \
 The only implemented benchmark currently is the sieve of Eratosthenes. The implemented algorithm is naïve, and it has the same complexity in all languages.
 C, C++, and D implement three closely related versions of the algorithm (v1, v2, v3). The "1k"..."50k" indicate the number of allocations allowed for SDCC, the number of allocations controls the optimization level for SDCC, with more allocations generally corresponding to more optimized code. The code coming from LLVM tends to leverage better high optimization levels. 
 
+![](img/openmsx0011.png)
 ![](img/openmsx0012.png)
 ![](img/openmsx0013.png)
 ![](img/openmsx0014.png)
 ![](img/openmsx0015.png)
 ![](img/openmsx0016.png)
 ![](img/openmsx0017.png)
-![](img/openmsx0018.png)
-![](img/openmsx0019.png)
