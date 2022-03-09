@@ -89,9 +89,10 @@ $(DLANG):
 #RUST (tries to find the default rustc)
 RUSTC = $(if $(shell which rustc), $(shell which rustc), rustc)
 RUST_FLAGS = --emit=llvm-ir -C opt-level=z -C embed-bitcode=no --target avr-unknown-gnu-atmega328 -Cpanic=abort
-RUST_FLAGS += -L dependency=ext/rust_deps 
-RUST_FLAGS += --extern 'noprelude:compiler_builtins=ext/rust_deps/libcompiler_builtins-4b0354a1ee99278a.rlib' 
-RUST_FLAGS += --extern 'noprelude:core=ext/rust_deps/libcore-c1e4c798d948b121.rlib' 
+#RUST_FLAGS += -L dependency=ext/rust_deps 
+#RUST_FLAGS += --extern 'noprelude:compiler_builtins=ext/rust_deps/libcompiler_builtins-4b0354a1ee99278a.rlib' 
+#RUST_FLAGS += --extern 'noprelude:core=ext/rust_deps/libcore-c1e4c798d948b121.rlib' 
+RUST_FLAGS += `cat ext/rust_deps/deps.txt`
 RUST_FLAGS += -Z unstable-options 
 
 $(RUSTC):
@@ -352,16 +353,21 @@ tmp/%.ll: %.d $(DLANG)
 
 
 # RUST
-tmp/%_O3.ll: %.rs $(RUSTC)
+ext/rust_deps/deps.txt:
+	@echo $(MSG)
+	@cd ext/rust_deps && bash create_deps.sh > deps.txt
+	
+
+tmp/%_O3.ll: %.rs $(RUSTC) ext/rust_deps/deps.txt
 	@echo $(MSG) && mkdir -p $(@D) && $(RUSTC) $(RUST_FLAGS) -C opt-level=3    $< -o $@
 
-tmp/%_Os.ll: %.rs $(RUSTC)
+tmp/%_Os.ll: %.rs $(RUSTC) ext/rust_deps/deps.txt
 	@echo $(MSG) && mkdir -p $(@D) && $(RUSTC) $(RUST_FLAGS) -C opt-level=s    $< -o $@
 
-tmp/%_Oz.ll: %.rs $(RUSTC)
+tmp/%_Oz.ll: %.rs $(RUSTC) ext/rust_deps/deps.txt
 	@echo $(MSG) && mkdir -p $(@D) && $(RUSTC) $(RUST_FLAGS) -C opt-level=z    $< -o $@
 
-tmp/%.ll: %.rs $(RUSTC)
+tmp/%.ll: %.rs $(RUSTC) ext/rust_deps/deps.txt
 	@echo $(MSG) && mkdir -p $(@D) && $(RUSTC) $(RUST_FLAGS)                   $< -o $@
 
 
